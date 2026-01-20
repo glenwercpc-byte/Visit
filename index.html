@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시카고 언약장로교회 교인 심방 일지</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .form-card {
+            background-color: #ffffff;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+        }
+
+        .input-field {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.625rem;
+            padding: 0 1rem;
+            width: 100%;
+            height: 2.75rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #f8fafc;
+        }
+
+        .textarea-field {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.625rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #f8fafc;
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .input-field:focus, .textarea-field:focus {
+            outline: none;
+            border-color: #6366f1;
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1.25rem;
+            height: 2.5rem;
+            border-radius: 0.625rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            gap: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        .btn-primary { 
+            background-color: #6366f1; 
+            color: white; 
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        }
+        .btn-primary:hover { 
+            background-color: #4f46e5; 
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary { background-color: #fff; border-color: #e2e8f0; color: #475569; }
+        .btn-secondary:hover { background-color: #f8fafc; border-color: #cbd5e1; }
+
+        .btn-danger { background-color: #fff; border-color: #fee2e2; color: #ef4444; }
+        .btn-danger:hover { background-color: #fef2f2; border-color: #fecaca; }
+
+        #status-msg {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            display: none;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: fixed;
+            top: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            z-index: 1000;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            min-width: 320px;
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .loading-spinner {
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        label { display: flex; align-items: center; margin-bottom: 0.5rem; }
+        .label-dot { width: 0.375rem; height: 0.375rem; background-color: #6366f1; border-radius: 50%; margin-right: 0.5rem; }
+        
+        #visit-count-display {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6366f1;
+            background-color: #eef2ff;
+            padding: 0 0.625rem;
+            border-radius: 9999px;
+            display: none;
+            align-items: center;
+            border: 1px solid #c7d2fe;
+            height: 1.5rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 bg-slate-50 min-h-screen">
+
+    <!-- 브라우저 알림 대체용 메시지 박스 -->
+    <div id="status-msg"></div>
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        <header class="text-center md:text-left pt-4 pb-2">
+            <h1 class="text-slate-900 font-extrabold text-2xl md:text-3xl tracking-tight">교인 심방 기록 시스템</h1>
+            <p class="text-slate-500 text-sm mt-1">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
+        </header>
+
+        <main class="form-card overflow-hidden">
+            <div class="p-5 bg-white border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-64">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </span>
+                        <input type="text" id="search-name" placeholder="조회할 대상자 성함" class="input-field pl-10 h-10 py-0 text-sm w-full border-slate-200">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="search-btn" class="btn btn-secondary h-10 px-4 min-w-[100px]">
+                            <span id="search-btn-content" class="flex items-center gap-2">기록 조회</span>
+                        </button>
+                        <div id="visit-count-display"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                    <button type="button" id="clear-btn" class="btn btn-danger h-10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
+                        <span>초기화</span>
+                    </button>
+                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6">
+                         <svg id="save-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-6 4l2 2m0 0l2-2m-2 2V3"></path></svg>
+                         <span id="save-btn-text">기록 저장</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="visit-form" class="p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 transition-colors duration-500">
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>방문 일자</label>
+                    <input type="date" id="visitDate" class="input-field font-medium" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>방문 시간</label>
+                    <div class="flex items-center gap-2">
+                        <input type="time" id="startTime" class="input-field" required>
+                        <span class="text-slate-300">~</span>
+                        <input type="time" id="endTime" class="input-field" required>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 대상자</label>
+                    <input type="text" id="targetName" class="input-field" placeholder="대상자 성함" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 요청자</label>
+                    <select id="requestor" class="input-field" required>
+                        <option value="" disabled selected>요청 구분 선택</option>
+                        <option value="본인">본인</option>
+                        <option value="청지기">청지기</option>
+                        <option value="선교회장">선교회장</option>
+                        <option value="시무권사">시무권사</option>
+                        <option value="담당장로">담당장로</option>
+                        <option value="담임목사">담임목사</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 참가자</label>
+                    <input type="text" id="visitorList" class="input-field" placeholder="심방자 전원 이름" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 사유</label>
+                    <input type="text" id="reason" class="input-field" placeholder="심방의 주된 목적" required>
+                </div>
+
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 장소</label>
+                    <input type="text" id="location" class="input-field" placeholder="자택, 병원, 교회, 카페 등 상세 장소" required>
+                </div>
+
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 및 상담 상세 내용</label>
+                    <textarea id="details" rows="2" class="textarea-field" placeholder="말씀 나눔, 현재 상황, 구체적인 기도 제목 등을 기록하세요." required></textarea>
+                </div>
+
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>향후 관리 및 결정 사항</label>
+                    <textarea id="followUp" rows="2" class="textarea-field" placeholder="추가 심방 필요 여부 또는 당부 사항" required></textarea>
+                </div>
+            </form>
+        </main>
+
+        <footer class="text-center text-slate-400 text-xs pb-10">
+            <p>© 2024 시카고 언약장로교회 | 관리 시스템 v2.0</p>
+        </footer>
+    </div>
+
+    <script>
+        // 브라우저 팝업 차단
+        window.alert = function() {};
+        window.confirm = function() { return true; };
+
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw77RqzE40WiT6Jbeb7cHu-6l81BacduMkfu4QTwquCJjgWWa3A4aqdukrN5mw_3VBStQ/exec"; 
+
+        function showMessage(text, type = 'success') {
+            const msgBox = document.getElementById('status-msg');
+            msgBox.innerText = text;
+            msgBox.style.display = 'block';
+            
+            if (type === 'error') {
+                msgBox.style.backgroundColor = '#fecaca'; // Soft red
+                msgBox.style.color = '#991b1b'; // Dark red
+            } else if (type === 'info') {
+                msgBox.style.backgroundColor = '#e2e8f0'; // Light gray (Slate-200)
+                msgBox.style.color = '#475569'; // Dark gray (Slate-600)
+            } else {
+                msgBox.style.backgroundColor = '#d1fae5'; // Soft green
+                msgBox.style.color = '#065f46'; // Dark green
+            }
+
+            setTimeout(() => {
+                msgBox.style.opacity = '1';
+                msgBox.style.transform = 'translateX(-50%) translateY(0)';
+            }, 10);
+
+            setTimeout(() => {
+                msgBox.style.opacity = '0';
+                msgBox.style.transform = 'translateX(-50%) translateY(-20px)';
+                setTimeout(() => {
+                    msgBox.style.display = 'none';
+                }, 400);
+            }, 3000);
+        }
+
+        function executeClear() {
+            document.getElementById('visit-form').reset();
+            document.getElementById('search-name').value = '';
+            document.getElementById('visit-count-display').style.display = 'none';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('visitDate').value = today;
+            showMessage("모든 내용이 초기화되었습니다.", "info");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            if (timeStr.toString().includes('T')) {
+                const d = new Date(timeStr);
+                return d.toTimeString().slice(0, 5);
+            }
+            return timeStr.toString().slice(0, 5);
+        }
+
+        function fillForm(data) {
+            if (!data) return;
+            let dateVal = '';
+            if (data.date) {
+                const d = new Date(data.date);
+                if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
+            }
+
+            document.getElementById('visitDate').value = dateVal;
+            document.getElementById('startTime').value = formatTime(data.start);
+            document.getElementById('endTime').value = formatTime(data.end);
+            document.getElementById('targetName').value = data.target || '';
+            document.getElementById('visitorList').value = data.visitors || '';
+            document.getElementById('requestor').value = data.req || '';
+            document.getElementById('reason').value = data.res || '';
+            document.getElementById('location').value = data.loc || '';
+            document.getElementById('details').value = data.det || '';
+            document.getElementById('followUp').value = data.fup || '';
+            
+            const form = document.getElementById('visit-form');
+            form.classList.add('bg-indigo-50/30');
+            setTimeout(() => form.classList.remove('bg-indigo-50/30'), 1500);
+        }
+
+        async function performSearch() {
+            const name = document.getElementById('search-name').value.trim();
+            const countDisplay = document.getElementById('visit-count-display');
+            
+            if (!name) { 
+                showMessage("조회할 성함을 입력하세요.", "error"); 
+                return; 
+            }
+
+            const btn = document.getElementById('search-btn');
+            const btnContent = document.getElementById('search-btn-content');
+            const originalContent = btnContent.innerHTML;
+            
+            btn.disabled = true;
+            btnContent.innerHTML = `<div class="loading-spinner"></div><span>조회 중...</span>`;
+            countDisplay.style.display = 'none';
+
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
+                const results = await response.json();
+                
+                if (results && results.length > 0) {
+                    countDisplay.innerText = `총 ${results.length}회 심방`;
+                    countDisplay.style.display = 'inline-flex';
+                    fillForm(results[results.length - 1]);
+                    showMessage(`'${name}' 성도님의 기록을 불러왔습니다.`);
+                } else {
+                    showMessage("해당 이름으로 등록된 기록이 없습니다.", "error");
+                }
+            } catch (error) {
+                console.error(error);
+                showMessage("데이터 조회 중 오류가 발생했습니다.", "error");
+            } finally {
+                btn.disabled = false;
+                btnContent.innerHTML = originalContent;
+            }
+        }
+
+        document.getElementById('search-btn').addEventListener('click', performSearch);
+        document.getElementById('clear-btn').addEventListener('click', executeClear);
+        document.getElementById('search-name').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', async () => {
+            const form = document.getElementById('visit-form');
+            
+            if (!form.checkValidity()) {
+                showMessage("필수 항목(*)을 모두 입력해주세요.", "error");
+                const firstInvalid = form.querySelector(':invalid');
+                if (firstInvalid) firstInvalid.focus();
+                return;
+            }
+
+            const btn = document.getElementById('save-btn');
+            const btnText = document.getElementById('save-btn-text');
+            const icon = document.getElementById('save-icon');
+            const originalText = btnText.innerText;
+            
+            const formData = {
+                visitDate: document.getElementById('visitDate').value,
+                startTime: document.getElementById('startTime').value,
+                endTime: document.getElementById('endTime').value,
+                targetName: document.getElementById('targetName').value,
+                visitorList: document.getElementById('visitorList').value,
+                requestor: document.getElementById('requestor').value,
+                reason: document.getElementById('reason').value,
+                location: document.getElementById('location').value,
+                details: document.getElementById('details').value,
+                followUp: document.getElementById('followUp').value
+            };
+
+            btn.disabled = true;
+            icon.classList.add('hidden');
+            btnText.innerHTML = `<div class="loading-spinner mr-2" style="border-top-color: white;"></div> 저장 중...`;
+
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                
+                showMessage("심방 기록이 성공적으로 저장되었습니다.");
+                form.reset();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('visitDate').value = today;
+                document.getElementById('visit-count-display').style.display = 'none';
+                document.getElementById('search-name').value = '';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error(error);
+                showMessage("저장 중 서버 연결 오류가 발생했습니다.", "error");
+            } finally {
+                btn.disabled = false;
+                icon.classList.remove('hidden');
+                btnText.innerText = originalText;
+            }
+        });
+
+        window.onload = () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('visitDate').value = today;
+        };
+    </script>
+</body>
+</html>

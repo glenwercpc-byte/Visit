@@ -90,7 +90,6 @@
             border: 1px solid #c7d2fe;
         }
 
-        /* 검색 실패 시 표시될 에러 배지 스타일 */
         .error-badge {
             background-color: #fee2e2;
             color: #b91c1c;
@@ -102,28 +101,38 @@
             align-items: center;
             border: 1px solid #fecaca;
         }
+
+        /* 초기화 알림 배지 스타일 */
+        .info-badge {
+            background-color: #f3f4f6;
+            color: #4b5563;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            border: 1px solid #d1d5db;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto space-y-6">
-        <!-- 제목 및 교회 명칭 섹션 -->
         <div class="text-center space-y-2">
             <h1 class="text-3xl font-extrabold text-gray-900">교인 심방 기록 시스템</h1>
             <p class="text-lg text-indigo-600 font-medium">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
-            <!-- 일반 알림용 상태 메시지는 유지 (저장 완료 등 표시용) -->
             <div id="status-msg" class="inline-block mt-2 shadow-sm"></div>
         </div>
 
         <div class="form-card p-6 md:p-10">
-            <!-- 상단 컨트롤 바 -->
             <div class="flex flex-col md:flex-row justify-end items-center mb-8 border-b pb-6 gap-4">
                 <div class="flex flex-wrap justify-center md:justify-end gap-3 w-full md:w-auto items-center">
                     
-                    <!-- 조회 결과 정보 표시 영역 (횟수/날짜 또는 에러 메시지) -->
+                    <!-- 모든 상태 알림 통합 컨테이너 -->
                     <div id="visit-history-container" class="hidden flex items-center gap-2">
-                        <!-- 성공 시 표시되는 배지 및 선택창 -->
-                        <div id="search-success-ui" class="flex items-center gap-2">
+                        <!-- 성공: 횟수 및 날짜 선택 -->
+                        <div id="search-success-ui" class="hidden flex items-center gap-2">
                             <div class="visit-count-badge">
                                 심방 횟수: <span id="total-count" class="ml-1">0</span>회
                             </div>
@@ -131,9 +140,13 @@
                                 <option value="">심방 날짜 선택</option>
                             </select>
                         </div>
-                        <!-- 실패 시 표시되는 배지 -->
+                        <!-- 실패: 검색 결과 없음 -->
                         <div id="search-error-ui" class="hidden error-badge">
                             검색된 기록이 없습니다.
+                        </div>
+                        <!-- 정보: 초기화 완료 -->
+                        <div id="info-ui" class="hidden info-badge">
+                            입력창이 초기화되었습니다.
                         </div>
                     </div>
 
@@ -224,6 +237,14 @@
             setTimeout(() => { msgBox.style.display = 'none'; }, 3000);
         }
 
+        // 왼쪽 알림 UI들을 모두 숨기는 헬퍼 함수
+        function hideAllBadgeUI() {
+            document.getElementById('visit-history-container').classList.add('hidden');
+            document.getElementById('search-success-ui').classList.add('hidden');
+            document.getElementById('search-error-ui').classList.add('hidden');
+            document.getElementById('info-ui').classList.add('hidden');
+        }
+
         function formatTime(timeStr) {
             if (!timeStr) return '';
             try {
@@ -271,10 +292,7 @@
             const originalText = btnText.innerText;
             btnText.innerText = "조회 중...";
             
-            // 이전 검색 결과 UI 숨김 처리
-            document.getElementById('visit-history-container').classList.add('hidden');
-            document.getElementById('search-error-ui').classList.add('hidden');
-            document.getElementById('search-success-ui').classList.add('hidden');
+            hideAllBadgeUI();
 
             try {
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
@@ -299,9 +317,7 @@
                         option.text = `${dateStr} (${item.res || '사유 없음'})`;
                         dateSelect.add(option);
                     });
-                    showMessage(`${results.length}건의 기록이 있습니다.`);
                 } else {
-                    // 기록이 없을 때 입력 박스 왼쪽에 에러 배지 표시
                     document.getElementById('search-error-ui').classList.remove('hidden');
                 }
             } catch (error) {
@@ -319,10 +335,15 @@
         function clearForm() {
             document.getElementById('visit-form').reset();
             document.getElementById('search-name').value = '';
-            document.getElementById('visit-history-container').classList.add('hidden');
-            document.getElementById('search-error-ui').classList.add('hidden');
+            
+            // 모든 배지 숨기고 '초기화 완료' 배지만 표시
+            hideAllBadgeUI();
+            document.getElementById('visit-history-container').classList.remove('hidden');
+            document.getElementById('info-ui').classList.remove('hidden');
+            
             cachedResults = [];
-            showMessage("입력창이 초기화되었습니다.");
+            // 상단 메시지박스는 띄우지 않거나 짧게 유지
+            setTimeout(() => { hideAllBadgeUI(); }, 3000); 
         }
 
         document.getElementById('search-btn').addEventListener('click', performSearch);
@@ -362,7 +383,7 @@
                 if(result.result === "success") {
                     showMessage("저장 완료!");
                     form.reset();
-                    document.getElementById('visit-history-container').classList.add('hidden');
+                    hideAllBadgeUI();
                 } else {
                     throw new Error();
                 }

@@ -78,7 +78,6 @@
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* 심방 횟수 표시 스타일 */
         .visit-count-badge {
             background-color: #e0e7ff;
             color: #4338ca;
@@ -90,6 +89,19 @@
             align-items: center;
             border: 1px solid #c7d2fe;
         }
+
+        /* 검색 실패 시 표시될 에러 배지 스타일 */
+        .error-badge {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            border: 1px solid #fecaca;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -99,6 +111,7 @@
         <div class="text-center space-y-2">
             <h1 class="text-3xl font-extrabold text-gray-900">교인 심방 기록 시스템</h1>
             <p class="text-lg text-indigo-600 font-medium">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
+            <!-- 일반 알림용 상태 메시지는 유지 (저장 완료 등 표시용) -->
             <div id="status-msg" class="inline-block mt-2 shadow-sm"></div>
         </div>
 
@@ -107,14 +120,21 @@
             <div class="flex flex-col md:flex-row justify-end items-center mb-8 border-b pb-6 gap-4">
                 <div class="flex flex-wrap justify-center md:justify-end gap-3 w-full md:w-auto items-center">
                     
-                    <!-- 심방 횟수 및 날짜 리스트 표시 영역 -->
+                    <!-- 조회 결과 정보 표시 영역 (횟수/날짜 또는 에러 메시지) -->
                     <div id="visit-history-container" class="hidden flex items-center gap-2">
-                        <div class="visit-count-badge">
-                            심방 횟수: <span id="total-count" class="ml-1">0</span>회
+                        <!-- 성공 시 표시되는 배지 및 선택창 -->
+                        <div id="search-success-ui" class="flex items-center gap-2">
+                            <div class="visit-count-badge">
+                                심방 횟수: <span id="total-count" class="ml-1">0</span>회
+                            </div>
+                            <select id="date-history-select" class="text-xs h-10 w-40 py-1" style="padding: 0.25rem 0.5rem;">
+                                <option value="">심방 날짜 선택</option>
+                            </select>
                         </div>
-                        <select id="date-history-select" class="text-xs h-10 w-40 py-1" style="padding: 0.25rem 0.5rem;">
-                            <option value="">심방 날짜 선택</option>
-                        </select>
+                        <!-- 실패 시 표시되는 배지 -->
+                        <div id="search-error-ui" class="hidden error-badge">
+                            검색된 기록이 없습니다.
+                        </div>
                     </div>
 
                     <div class="flex items-center space-x-2">
@@ -192,7 +212,7 @@
 
     <script>
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYOXKWKIlQWahVdp2mfsegHLO3EVOT9W-f7rodNAksGkm4CjI0gCMHB4Lfkv-8HSo/exec"; 
-        let cachedResults = []; // 검색된 전체 결과 보관용
+        let cachedResults = [];
 
         function showMessage(text, isError = false) {
             const msgBox = document.getElementById('status-msg');
@@ -219,19 +239,14 @@
 
         function fillForm(data) {
             if (!data) return;
-            
             let dateVal = '';
             if (data.date) {
                 const d = new Date(data.date);
-                if (!isNaN(d)) {
-                    dateVal = d.toISOString().split('T')[0];
-                }
+                if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
             }
-
             document.getElementById('visitDate').value = dateVal;
             document.getElementById('startTime').value = formatTime(data.start);
             document.getElementById('endTime').value = formatTime(data.end);
-            
             document.getElementById('targetName').value = data.target || '';
             document.getElementById('visitorList').value = data.visitors || '';
             document.getElementById('requestor').value = data.req || '';
@@ -252,46 +267,42 @@
                 return;
             }
 
-            if (!APPS_SCRIPT_URL) {
-                showMessage("URL 설정이 필요합니다.", true);
-                return;
-            }
-
             const btnText = document.getElementById('search-btn-text');
             const originalText = btnText.innerText;
             btnText.innerText = "조회 중...";
+            
+            // 이전 검색 결과 UI 숨김 처리
+            document.getElementById('visit-history-container').classList.add('hidden');
+            document.getElementById('search-error-ui').classList.add('hidden');
+            document.getElementById('search-success-ui').classList.add('hidden');
 
             try {
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
                 const results = await response.json();
                 
+                document.getElementById('visit-history-container').classList.remove('hidden');
+
                 if (results && results.length > 0) {
                     cachedResults = results;
-                    
-                    // 최신 데이터로 폼 채우기
                     fillForm(results[results.length - 1]);
                     
-                    // 횟수 및 날짜 리스트 UI 업데이트
-                    document.getElementById('visit-history-container').classList.remove('hidden');
+                    document.getElementById('search-success-ui').classList.remove('hidden');
                     document.getElementById('total-count').innerText = results.length;
                     
                     const dateSelect = document.getElementById('date-history-select');
                     dateSelect.innerHTML = '<option value="">과거 기록 선택</option>';
-                    
-                    // 역순으로 (최신순) 날짜 리스트 생성
                     [...results].reverse().forEach((item, index) => {
                         const d = new Date(item.date);
                         const dateStr = !isNaN(d) ? d.toLocaleDateString() : "날짜 없음";
                         const option = document.createElement('option');
-                        option.value = results.length - 1 - index; // 원본 배열 인덱스
+                        option.value = results.length - 1 - index;
                         option.text = `${dateStr} (${item.res || '사유 없음'})`;
                         dateSelect.add(option);
                     });
-
                     showMessage(`${results.length}건의 기록이 있습니다.`);
                 } else {
-                    document.getElementById('visit-history-container').classList.add('hidden');
-                    showMessage("검색된 기록이 없습니다.", true);
+                    // 기록이 없을 때 입력 박스 왼쪽에 에러 배지 표시
+                    document.getElementById('search-error-ui').classList.remove('hidden');
                 }
             } catch (error) {
                 showMessage("데이터 로드 중 오류가 발생했습니다.", true);
@@ -300,18 +311,16 @@
             }
         }
 
-        // 날짜 선택 시 해당 기록으로 폼 전환
         document.getElementById('date-history-select').addEventListener('change', (e) => {
             const idx = e.target.value;
-            if (idx !== "" && cachedResults[idx]) {
-                fillForm(cachedResults[idx]);
-            }
+            if (idx !== "" && cachedResults[idx]) fillForm(cachedResults[idx]);
         });
 
         function clearForm() {
             document.getElementById('visit-form').reset();
             document.getElementById('search-name').value = '';
             document.getElementById('visit-history-container').classList.add('hidden');
+            document.getElementById('search-error-ui').classList.add('hidden');
             cachedResults = [];
             showMessage("입력창이 초기화되었습니다.");
         }
@@ -319,10 +328,7 @@
         document.getElementById('search-btn').addEventListener('click', performSearch);
         document.getElementById('clear-btn').addEventListener('click', clearForm);
         document.getElementById('search-name').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                performSearch();
-            }
+            if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
         });
 
         document.getElementById('save-btn').addEventListener('click', async () => {
@@ -341,8 +347,6 @@
                 details: document.getElementById('details').value,
                 followUp: document.getElementById('followUp').value
             };
-
-            if (!APPS_SCRIPT_URL) return showMessage("URL이 설정되지 않았습니다.", true);
 
             const btn = document.getElementById('save-btn');
             const originalHTML = btn.innerHTML;

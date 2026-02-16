@@ -1,439 +1,121 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>교인 심방 기록 시스템</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
-        body {
-            font-family: 'Inter', 'Noto Sans KR', sans-serif;
-            background-color: #f8fafc;
-        }
-        .form-card {
-            background-color: #ffffff;
-            border-radius: 1rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        input, textarea, select {
-            border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem 0.75rem;
-            width: 100%;
-            transition: border-color 0.2s;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 1px #4f46e5;
-        }
-        .input-compact {
-            max-width: 20rem; 
-        }
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-primary:hover {
-            background-color: #4338ca;
-        }
-        .btn-secondary {
-            background-color: #e5e7eb;
-            color: #374151;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-secondary:hover {
-            background-color: #d1d5db;
-        }
-        .btn-danger {
-            background-color: #fee2e2;
-            color: #991b1b;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-danger:hover {
-            background-color: #fecaca;
-        }
-        #status-msg {
-            display: none;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-left: 1rem;
-            animation: fadeIn 0.3s ease-out;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* 알림 배지 공통 스타일 */
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 0.5rem;
-            font-weight: 700;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            border-width: 1px;
-        }
+/**
+ * Google Apps Script for Church Visitation Log (시카고 언약장로교회)
+ * * Instructions:
+ * 1. Create a Google Sheet.
+ * 2. Rename the first tab to "심방기록".
+ * 3. Add headers in Row 1: [날짜, 시작시간, 종료시간, 대상자, 심방자, 요청자, 사유, 장소, 상담내용, 사후관리, 타임스탬프]
+ * 4. Go to Extensions > Apps Script and paste this code.
+ * 5. Deploy > New Deployment > Web App (Execute as: Me, Access: Anyone).
+ */
 
-        /* 심방 횟수 (성공) */
-        .visit-count-badge {
-            background-color: #e0e7ff;
-            color: #4338ca;
-            border-color: #c7d2fe;
-        }
+const SHEET_NAME = "심방기록";
 
-        /* 검색 결과 없음 (에러) */
-        .error-badge {
-            background-color: #fee2e2;
-            color: #b91c1c;
-            border-color: #fecaca;
-        }
+/**
+ * POST handler: Receives data from the form and saves it to the sheet.
+ */
+function doPost(e) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error("Sheet '" + SHEET_NAME + "' not found.");
+    
+    const data = JSON.parse(e.postData.contents);
+    
+    // Maps the JSON keys from index.html to the spreadsheet columns
+    sheet.appendRow([
+      data.visitDate,    // Col A: 날짜
+      data.startTime,    // Col B: 시작시간
+      data.endTime,      // Col C: 종료시간
+      data.targetName,   // Col D: 대상자
+      data.visitorList,  // Col E: 심방자
+      data.requestor,    // Col F: 요청자
+      data.reason,       // Col G: 사유
+      data.location,     // Col H: 장소
+      data.details,      // Col I: 상담내용
+      data.followUp,     // Col J: 사후관리
+      new Date()         // Col K: 타임스탬프 (Record created at)
+    ]);
+    
+    return ContentService.createTextOutput(JSON.stringify({ "result": "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "result": "error", "error": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
-        /* 초기화 완료 (정보) */
-        .info-badge {
-            background-color: #f0fdf4; 
-            color: #15803d; 
-            border-color: #bbf7d0;
-        }
+/**
+ * GET handler: Handles search queries and data retrieval.
+ */
+function doGet(e) {
+  try {
+    const action = e.parameter.action;
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    
+    // If no action is provided (e.g. opening the URL directly), show a status message or instructions
+    if (!action) {
+      return HtmlService.createHtmlOutput(
+        "<html><body style='font-family: sans-serif; padding: 20px;'>" +
+        "<h2>심방기록 API 시스템</h2>" +
+        "<p>이 URL은 API 엔드포인트입니다. 웹 프로그램을 통해 접속하시거나 파라미터를 사용하세요.</p>" +
+        "<ul>" +
+        "<li>상태: <b>정상 작동 중</b></li>" +
+        "<li>연결된 시트: " + (sheet ? SHEET_NAME : "시트를 찾을 수 없음") + "</li>" +
+        "</ul>" +
+        "</body></html>"
+      );
+    }
 
-        /* 이름 미입력 (경고) */
-        .warning-badge {
-            background-color: #fff7ed;
-            color: #9a3412;
-            border-color: #fdba74;
-        }
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({ "error": "Sheet not found" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
-        /* 로딩 애니메이션 (점 세 개) */
-        .dot-flashing {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .dot-flashing span {
-            width: 3px;
-            height: 3px;
-            margin: 0 1px;
-            background-color: currentColor;
-            border-radius: 50%;
-            display: inline-block;
-            animation: dot-flashing 1s infinite linear alternate;
-        }
-        .dot-flashing span:nth-child(2) { animation-delay: 0.2s; }
-        .dot-flashing span:nth-child(3) { animation-delay: 0.4s; }
+    // SEARCH LOGIC
+    if (action === 'search') {
+      const name = e.parameter.name;
+      if (!name) {
+        return ContentService.createTextOutput(JSON.stringify([]))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
 
-        @keyframes dot-flashing {
-            0% { opacity: 0.2; }
-            100% { opacity: 1; }
-        }
-    </style>
-</head>
-<body class="p-4 md:p-8">
+      const data = sheet.getDataRange().getValues();
+      if (data.length <= 1) {
+        return ContentService.createTextOutput(JSON.stringify([]))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      
+      const headers = data.shift(); // Remove header row
+      
+      // Filter rows where index 3 (Target Name) contains the search string (case-insensitive)
+      const results = data.filter(row => {
+        return row[3] && row[3].toString().toLowerCase().includes(name.toLowerCase());
+      }).map(row => {
+        // Return object keys matching the fillForm() logic in index.html
+        return {
+          date: row[0],      // visitDate
+          start: row[1],     // startTime
+          end: row[2],       // endTime
+          target: row[3],    // targetName
+          visitors: row[4],  // visitorList
+          req: row[5],       // requestor
+          res: row[6],       // reason
+          loc: row[7],       // location
+          det: row[8],       // details
+          fup: row[9]        // followUp
+        };
+      });
+      
+      return ContentService.createTextOutput(JSON.stringify(results))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // Default error for unknown actions
+    return ContentService.createTextOutput(JSON.stringify({ "error": "Invalid Action: " + action }))
+      .setMimeType(ContentService.MimeType.JSON);
 
-    <div class="max-w-4xl mx-auto space-y-6">
-        <div class="text-center space-y-2">
-            <h1 class="text-3xl font-extrabold text-gray-900">교인 심방 기록 시스템</h1>
-            <p class="text-lg text-indigo-600 font-medium">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
-            <div id="status-msg" class="inline-block mt-2 shadow-sm"></div>
-        </div>
-
-        <div class="form-card p-6 md:p-10">
-            <div class="flex flex-col md:flex-row justify-end items-center mb-8 border-b pb-6 gap-4">
-                <div class="flex flex-wrap justify-center md:justify-end gap-3 w-full md:w-auto items-center">
-                    
-                    <!-- 상태 알림 통합 컨테이너 -->
-                    <div id="visit-history-container" class="hidden flex items-center gap-2">
-                        <div id="search-success-ui" class="hidden flex items-center gap-2">
-                            <div class="badge visit-count-badge">
-                                심방 횟수: <span id="total-count" class="ml-1">0</span>회
-                            </div>
-                            <select id="date-history-select" class="text-xs h-10 w-40 py-1" style="padding: 0.25rem 0.5rem;">
-                                <option value="">심방 날짜 선택</option>
-                            </select>
-                        </div>
-                        <div id="search-error-ui" class="hidden badge error-badge">
-                            검색된 기록이 없습니다.
-                        </div>
-                        <div id="info-ui" class="hidden badge info-badge">
-                            입력창이 초기화되었습니다.
-                        </div>
-                        <div id="warning-ui" class="hidden badge warning-badge">
-                            조회할 이름을 입력하세요.
-                        </div>
-                    </div>
-
-                    <div class="flex items-center space-x-2">
-                        <input type="text" id="search-name" placeholder="조회할 대상자 이름" class="w-32 md:w-48 text-sm py-1.5 h-10" style="padding: 0.5rem 0.75rem;">
-                        <button type="button" id="search-btn" class="btn-secondary flex items-center space-x-2 text-sm h-10 min-w-[100px] justify-center">
-                            <svg id="search-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                            <span id="search-btn-text">기록 조회</span>
-                        </button>
-                    </div>
-                    
-                    <button type="button" id="clear-btn" class="btn-danger flex items-center space-x-2 text-sm h-10">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span>초기화</span>
-                    </button>
-                    <button type="button" id="save-btn" class="btn-primary flex items-center space-x-2 text-sm h-10">
-                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-6 4l2 2m0 0l2-2m-2 2V3"></path></svg>
-                        <span>저장</span>
-                    </button>
-                </div>
-            </div>
-
-            <form id="visit-form" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                <!-- 폼 내용 동일 -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">방문 일자</label>
-                    <input type="date" id="visitDate" class="input-compact" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">방문 시간 (시작/종료)</label>
-                    <div class="flex items-center space-x-2 input-compact">
-                        <input type="time" id="startTime" required>
-                        <span class="text-gray-400">~</span>
-                        <input type="time" id="endTime" required>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 대상자</label>
-                    <input type="text" id="targetName" class="input-compact" placeholder="대상자 이름" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 요청자</label>
-                    <select id="requestor" class="input-compact" required>
-                        <option value="" disabled selected>요청자를 선택하세요</option>
-                        <option value="본인">본인</option>
-                        <option value="청지기">청지기</option>
-                        <option value="선교회장">선교회장</option>
-                        <option value="담당장로">담당장로</option>
-                        <option value="담임목사">담임목사</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 참가자</label>
-                    <textarea id="visitorList" class="input-compact" rows="1" placeholder="심방 참가자 전원을 입력하세요" required></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 사유</label>
-                    <textarea id="reason" class="input-compact" rows="1" placeholder="심방 목적 요약" required></textarea>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 장소 혹은 주소</label>
-                    <input type="text" id="location" placeholder="전체 주소 또는 위치 세부 정보" required>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">심방 상담 내용</label>
-                    <textarea id="details" rows="3" placeholder="논의 및 결과에 대한 자세한 메모" required></textarea>
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1.5">상담 사후 관리</label>
-                    <textarea id="followUp" rows="3" placeholder="후속 작업 또는 결정 사항" required></textarea>
-                </div>
-            </form>
-        </div>
-
-        <div class="text-center text-gray-400 text-sm py-4">© 2024 Chicago Covenant Presbyterian Church - All Rights Reserved.</div>
-    </div>
-
-    <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYOXKWKIlQWahVdp2mfsegHLO3EVOT9W-f7rodNAksGkm4CjI0gCMHB4Lfkv-8HSo/exec"; 
-        let cachedResults = [];
-        let badgeTimeout = null;
-
-        function showMessage(text, isError = false) {
-            const msgBox = document.getElementById('status-msg');
-            msgBox.innerText = text;
-            msgBox.style.display = 'inline-block';
-            msgBox.style.backgroundColor = isError ? '#fee2e2' : '#ecfdf5';
-            msgBox.style.color = isError ? '#991b1b' : '#065f46';
-            msgBox.style.border = `1px solid ${isError ? '#f87171' : '#34d399'}`;
-            setTimeout(() => { msgBox.style.display = 'none'; }, 3000);
-        }
-
-        function hideAllBadgeUI() {
-            if (badgeTimeout) {
-                clearTimeout(badgeTimeout);
-                badgeTimeout = null;
-            }
-            document.getElementById('visit-history-container').classList.add('hidden');
-            document.getElementById('search-success-ui').classList.add('hidden');
-            document.getElementById('search-error-ui').classList.add('hidden');
-            document.getElementById('info-ui').classList.add('hidden');
-            document.getElementById('warning-ui').classList.add('hidden');
-        }
-
-        function showBadgeWithTimer(elementId, keepVisible = false) {
-            document.getElementById('visit-history-container').classList.remove('hidden');
-            document.getElementById(elementId).classList.remove('hidden');
-            if (!keepVisible) {
-                badgeTimeout = setTimeout(() => { hideAllBadgeUI(); }, 3000);
-            }
-        }
-
-        function formatTime(timeStr) {
-            if (!timeStr) return '';
-            try {
-                if (typeof timeStr === 'string' && timeStr.includes('T')) {
-                    const d = new Date(timeStr);
-                    return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
-                }
-                if (timeStr instanceof Date) {
-                    return timeStr.getHours().toString().padStart(2, '0') + ':' + timeStr.getMinutes().toString().padStart(2, '0');
-                }
-                return timeStr.toString().slice(0, 5);
-            } catch (e) { return ''; }
-        }
-
-        function fillForm(data) {
-            if (!data) return;
-            let dateVal = '';
-            if (data.date) {
-                const d = new Date(data.date);
-                if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
-            }
-            document.getElementById('visitDate').value = dateVal;
-            document.getElementById('startTime').value = formatTime(data.start);
-            document.getElementById('endTime').value = formatTime(data.end);
-            document.getElementById('targetName').value = data.target || '';
-            document.getElementById('visitorList').value = data.visitors || '';
-            document.getElementById('requestor').value = data.req || '';
-            document.getElementById('reason').value = data.res || '';
-            document.getElementById('location').value = data.loc || '';
-            document.getElementById('details').value = data.det || '';
-            document.getElementById('followUp').value = data.fup || '';
-            
-            const form = document.getElementById('visit-form');
-            form.style.backgroundColor = '#f5f3ff';
-            setTimeout(() => form.style.backgroundColor = 'transparent', 1000);
-        }
-
-        async function performSearch() {
-            const name = document.getElementById('search-name').value.trim();
-            const btn = document.getElementById('search-btn');
-            const btnText = document.getElementById('search-btn-text');
-            const icon = document.getElementById('search-icon');
-            
-            hideAllBadgeUI();
-
-            if (!name) {
-                showBadgeWithTimer('warning-ui');
-                return;
-            }
-
-            // 로딩 상태 시작
-            btn.disabled = true;
-            icon.classList.add('animate-spin'); // 돋보기 회전
-            btnText.innerHTML = '조회 중<span class="dot-flashing"><span></span><span></span><span></span></span>';
-
-            try {
-                const response = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`, {
-                    method: 'GET',
-                    mode: 'cors'
-                });
-                if (!response.ok) throw new Error();
-                const results = await response.json();
-
-                if (results && results.length > 0) {
-                    cachedResults = results;
-                    fillForm(results[results.length - 1]);
-                    document.getElementById('total-count').innerText = results.length;
-                    
-                    const dateSelect = document.getElementById('date-history-select');
-                    dateSelect.innerHTML = '<option value="">과거 기록 선택</option>';
-                    [...results].reverse().forEach((item, index) => {
-                        const d = new Date(item.date);
-                        const option = document.createElement('option');
-                        option.value = results.length - 1 - index;
-                        option.text = `${!isNaN(d) ? d.toLocaleDateString() : '날짜 없음'} (${item.res || '사유 없음'})`;
-                        dateSelect.add(option);
-                    });
-                    showBadgeWithTimer('search-success-ui', true);
-                } else {
-                    showBadgeWithTimer('search-error-ui');
-                }
-            } catch (error) {
-                showMessage("조회 실패: 연결 상태를 확인하세요.", true);
-            } finally {
-                // 로딩 상태 종료
-                btn.disabled = false;
-                icon.classList.remove('animate-spin');
-                btnText.innerText = "기록 조회";
-            }
-        }
-
-        document.getElementById('date-history-select').addEventListener('change', (e) => {
-            const idx = e.target.value;
-            if (idx !== "" && cachedResults[idx]) fillForm(cachedResults[idx]);
-        });
-
-        function clearForm() {
-            document.getElementById('visit-form').reset();
-            document.getElementById('search-name').value = '';
-            hideAllBadgeUI();
-            showBadgeWithTimer('info-ui');
-            cachedResults = [];
-        }
-
-        document.getElementById('search-btn').addEventListener('click', performSearch);
-        document.getElementById('clear-btn').addEventListener('click', clearForm);
-        document.getElementById('search-name').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
-        });
-
-        document.getElementById('save-btn').addEventListener('click', async () => {
-            const form = document.getElementById('visit-form');
-            if (!form.checkValidity()) return form.reportValidity();
-
-            const formData = {
-                visitDate: document.getElementById('visitDate').value,
-                startTime: document.getElementById('startTime').value,
-                endTime: document.getElementById('endTime').value,
-                targetName: document.getElementById('targetName').value,
-                visitorList: document.getElementById('visitorList').value,
-                requestor: document.getElementById('requestor').value,
-                reason: document.getElementById('reason').value,
-                location: document.getElementById('location').value,
-                details: document.getElementById('details').value,
-                followUp: document.getElementById('followUp').value
-            };
-
-            const btn = document.getElementById('save-btn');
-            const originalHTML = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerText = "저장 중...";
-
-            try {
-                await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    cache: 'no-cache',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
-                });
-                showMessage("저장 완료!");
-                form.reset();
-                hideAllBadgeUI();
-            } catch (error) {
-                showMessage("저장 중 오류 발생", true);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-            }
-        });
-    </script>
-</body>
-</html>
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ "error": error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}

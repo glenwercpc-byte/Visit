@@ -119,12 +119,13 @@
             background-color: #eef2ff;
             padding: 0 0.75rem;
             border-radius: 9999px;
-            display: none;
+            display: none; /* Initially hidden */
             align-items: center;
             border: 1px solid #c7d2fe;
             height: 1.75rem;
             cursor: pointer;
             transition: all 0.2s;
+            z-index: 10;
         }
         #visit-count-display:hover {
             background-color: #6366f1;
@@ -134,7 +135,7 @@
 
         /* Modal Styles */
         #history-modal {
-            display: none;
+            display: none; /* Changed from flex to none to prevent blocking clicks */
             position: fixed;
             inset: 0;
             background-color: rgba(0,0,0,0.5);
@@ -159,7 +160,7 @@
     <div id="status-msg"></div>
 
     <!-- 심방 기록 목록 모달 -->
-    <div id="history-modal" class="flex">
+    <div id="history-modal">
         <div class="modal-content">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white">
                 <h3 class="font-bold text-slate-800">심방 기록 목록</h3>
@@ -285,7 +286,7 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'church-visitation-log';
 
         let currentUser = null;
-        let searchResults = []; // 현재 검색된 대상의 전체 기록 저장
+        let searchResults = [];
 
         // UI Helpers
         function showMessage(text, type = 'success') {
@@ -293,7 +294,6 @@
             msgBox.innerText = text;
             msgBox.style.display = 'block';
             msgBox.style.opacity = '0';
-            msgBox.style.transform = 'translateX(-50%) translateY(-20px)';
             
             const colors = {
                 error: { bg: '#fecaca', text: '#991b1b' },
@@ -330,7 +330,7 @@
             if (searchResults.length === 0) return;
             
             historyList.innerHTML = '';
-            searchResults.forEach((record, index) => {
+            searchResults.forEach((record) => {
                 const item = document.createElement('button');
                 item.className = "w-full text-left p-3 hover:bg-slate-50 rounded-lg border border-transparent hover:border-slate-100 flex justify-between items-center transition-all group";
                 item.innerHTML = `
@@ -491,7 +491,6 @@
         // Init Events
         window.addEventListener('DOMContentLoaded', () => {
             setTodayDate();
-            modal.style.display = 'none'; // 초기 로딩 시 모달 숨김
 
             document.getElementById('search-btn').addEventListener('click', performSearch);
             document.getElementById('save-btn').addEventListener('click', performSave);
@@ -504,8 +503,11 @@
                 showMessage("초기화되었습니다.", "info");
             });
             
-            // 모달 이벤트
-            countDisplay.addEventListener('click', openHistoryModal);
+            // 모달 이벤트 바인딩
+            countDisplay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openHistoryModal();
+            });
             document.getElementById('close-modal').addEventListener('click', closeHistoryModal);
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) closeHistoryModal();

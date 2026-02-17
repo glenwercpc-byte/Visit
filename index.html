@@ -88,9 +88,26 @@
             text-align: center;
         }
 
+        /* 화살표 애니메이션 스타일 */
+        .arrow-loading {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .arrow-icon {
+            animation: arrowMove 1s infinite;
+        }
+
+        @keyframes arrowMove {
+            0% { transform: translateX(-5px); opacity: 0; }
+            50% { transform: translateX(0); opacity: 1; }
+            100% { transform: translateX(5px); opacity: 0; }
+        }
+
         .loading-spinner {
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid white;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-top: 2px solid currentColor;
             border-radius: 50%;
             width: 1rem;
             height: 1rem;
@@ -188,8 +205,8 @@
                         <input type="text" id="search-name" placeholder="조회할 대상자 성함" class="input-field pl-10 h-10 py-0 text-sm w-full border-slate-200">
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <button type="button" id="search-btn" class="btn btn-secondary h-10 px-4 flex-1 sm:flex-none">
-                            <span id="search-btn-text">기록 조회</span>
+                        <button type="button" id="search-btn" class="btn btn-secondary h-10 px-4 flex-1 sm:flex-none min-w-[100px]">
+                            <span id="search-btn-content">기록 조회</span>
                         </button>
                         <div id="visit-count-display" title="클릭하여 전체 방문일 목록 보기"></div>
                     </div>
@@ -278,7 +295,7 @@
         </main>
 
         <footer class="text-center text-slate-400 text-xs pb-10">
-            <p>© 2026 시카고 언약장로교회 | 교인 관리 시스템 v2.4</p>
+            <p>© 2026 시카고 언약장로교회 | 교인 관리 시스템 v2.6</p>
         </footer>
     </div>
 
@@ -288,7 +305,6 @@
 
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzj-1AKIC4Nq5hUVxStpN3MoGShWJZycpYgFo7EkRJxW2vw_ZxREaqMwQYLePhIvswHRA/exec"; 
         
-        // 검색된 전체 결과를 담을 변수
         let currentSearchResults = [];
 
         function showMessage(text, type = 'success') {
@@ -366,14 +382,12 @@
             }
         }
 
-        // 모달 열기 및 목록 생성
         function openHistoryModal() {
             if (currentSearchResults.length === 0) return;
             
             const listContainer = document.getElementById('history-list');
             listContainer.innerHTML = '';
             
-            // 날짜 최신순 정렬 (기존 데이터가 시간순이라면 역순 표시)
             const sortedResults = [...currentSearchResults].reverse();
             
             sortedResults.forEach((record, index) => {
@@ -408,6 +422,8 @@
             const nameInput = document.getElementById('search-name');
             const name = nameInput.value.trim();
             const countDisplay = document.getElementById('visit-count-display');
+            const btnContent = document.getElementById('search-btn-content');
+            const btn = document.getElementById('search-btn');
             
             if (!name) { 
                 showMessage("조회할 성함을 입력하세요.", "error"); 
@@ -415,11 +431,19 @@
                 return; 
             }
 
-            const btn = document.getElementById('search-btn');
-            const originalContent = btn.innerHTML;
-            
+            const originalContent = btnContent.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = `<div class="loading-spinner"></div>`;
+            
+            // 화살표 애니메이션과 텍스트로 변경
+            btnContent.innerHTML = `
+                <div class="arrow-loading">
+                    <span>조회 중</span>
+                    <svg class="w-4 h-4 arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+            `;
+            
             countDisplay.style.display = 'none';
             currentSearchResults = [];
 
@@ -431,7 +455,6 @@
                     currentSearchResults = results;
                     countDisplay.innerText = `총 ${results.length}회 기록 ▶`;
                     countDisplay.style.display = 'inline-flex';
-                    // 가장 최근 기록(마지막 항목) 표시
                     fillForm(results[results.length - 1]);
                     showMessage(`'${name}' 성도님의 최근 기록을 불러왔습니다.`);
                 } else {
@@ -442,7 +465,7 @@
                 showMessage("데이터 조회 중 오류가 발생했습니다.", "error");
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = originalContent;
+                btnContent.innerHTML = originalContent;
             }
         }
 
@@ -512,7 +535,6 @@
             if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
         });
 
-        // 모달 닫기 (ESC키)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeModal();
         });
@@ -523,4 +545,3 @@
     </script>
 </body>
 </html>
-

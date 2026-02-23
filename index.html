@@ -359,7 +359,8 @@
             const icon = document.getElementById('save-icon');
             const originalText = btnText.innerText;
             
-            const formData = {
+            // 전송 데이터 생성
+            const payload = {
                 visitDate: document.getElementById('visitDate').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
@@ -377,14 +378,16 @@
             btnText.innerHTML = `<div class="loading-spinner mr-2"></div> 저장 중...`;
 
             try {
-                // 이메일 발송과 데이터 저장을 위해 'no-cors'를 제거하거나 폼 데이터 형식으로 전달 시도
-                const response = await fetch(APPS_SCRIPT_URL, {
+                // Apps Script의 doPost(e)는 e.postData.contents를 통해 JSON을 받습니다.
+                // 쿼리 스트링으로 action을 명시하여 서버 처리를 돕습니다.
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=save`, {
                     method: 'POST',
-                    // mode: 'no-cors'를 제거하여 성공 여부를 추적할 수 있도록 변경 (CORS 정책에 따라 서버 응답 확인 가능)
-                    body: JSON.stringify(formData)
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(payload)
                 });
                 
-                // 앱스 스크립트에서 응답이 올 경우 (CORS 허용 시)
                 showMessage("심방 기록이 성공적으로 저장되었습니다. 이메일 전송이 시작되었습니다.");
                 
                 form.reset();
@@ -396,8 +399,7 @@
                 
             } catch (error) {
                 console.error("Save Error:", error);
-                // fetch 오류가 나더라도 'no-cors' 환경에서는 실제로는 데이터가 갔을 수 있습니다.
-                showMessage("저장 요청을 보냈습니다. (네트워크 상태를 확인해주세요)", "info");
+                showMessage("서버 통신 중 오류가 발생했습니다. (기록은 저장되었을 수 있습니다)", "info");
             } finally {
                 btn.disabled = false;
                 icon.classList.remove('hidden');

@@ -12,7 +12,6 @@
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: #f1f5f9;
             color: #1e293b;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .form-card {
@@ -28,7 +27,6 @@
             width: 100%;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             background-color: #f8fafc;
-            font-size: 1rem;
         }
 
         .input-field:focus {
@@ -50,7 +48,6 @@
             cursor: pointer;
             gap: 0.5rem;
             border: 1px solid transparent;
-            user-select: none;
         }
 
         .btn-primary { 
@@ -69,6 +66,7 @@
         .btn-danger { background-color: #fff; border-color: #fee2e2; color: #ef4444; }
         .btn-danger:hover { background-color: #fef2f2; border-color: #fecaca; }
 
+        /* 커스텀 메시지 박스 */
         #status-msg {
             padding: 1rem 1.5rem;
             border-radius: 1rem;
@@ -83,31 +81,14 @@
             transform: translateX(-50%) translateY(-20px);
             z-index: 1000;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            min-width: 300px;
-            max-width: 90vw;
+            min-width: 320px;
             text-align: center;
-        }
-
-        /* 화살표 애니메이션 스타일 */
-        .arrow-loading {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .arrow-icon {
-            animation: arrowMove 1s infinite;
-        }
-
-        @keyframes arrowMove {
-            0% { transform: translateX(-5px); opacity: 0; }
-            50% { transform: translateX(0); opacity: 1; }
-            100% { transform: translateX(5px); opacity: 0; }
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .loading-spinner {
-            border: 2px solid rgba(0,0,0,0.1);
-            border-top: 2px solid currentColor;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
             border-radius: 50%;
             width: 1rem;
             height: 1rem;
@@ -115,6 +96,8 @@
         }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        label { display: flex; align-items: center; margin-bottom: 0.5rem; }
         .label-dot { width: 0.375rem; height: 0.375rem; background-color: #6366f1; border-radius: 50%; margin-right: 0.5rem; }
         
         #visit-count-display {
@@ -122,72 +105,20 @@
             font-weight: 700;
             color: #6366f1;
             background-color: #eef2ff;
-            padding: 0.125rem 0.75rem;
+            padding: 0.125rem 0.625rem;
             border-radius: 9999px;
             display: none;
             align-items: center;
             border: 1px solid #c7d2fe;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        #visit-count-display:hover {
-            background-color: #6366f1;
-            color: #fff;
-            transform: scale(1.05);
         }
 
         textarea { resize: none; }
-
-        /* Modal Styles */
-        #history-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-
-        .modal-content {
-            background: white;
-            width: 100%;
-            max-width: 400px;
-            border-radius: 1.25rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
     </style>
 </head>
 <body class="p-4 md:p-8 bg-slate-50 min-h-screen">
 
-    <!-- Status Message -->
+    <!-- 브라우저 alert 대체용 커스텀 메시지 -->
     <div id="status-msg"></div>
-
-    <!-- History Modal -->
-    <div id="history-modal" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800">심방 기록 목록</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div id="history-list" class="overflow-y-auto p-2 space-y-1">
-                <!-- 날짜 목록이 여기에 생성됨 -->
-            </div>
-            <div class="p-4 bg-slate-50 text-center text-xs text-slate-400 italic">
-                날짜를 클릭하면 상세 내용을 불러옵니다.
-            </div>
-        </div>
-    </div>
 
     <div class="max-w-4xl mx-auto space-y-6">
         <header class="text-center md:text-left pt-4 pb-2">
@@ -196,46 +127,42 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <div class="p-5 bg-white border-b border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-4">
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                    <div class="relative w-full sm:w-64">
+            <div class="p-5 bg-white border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-64">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </span>
                         <input type="text" id="search-name" placeholder="조회할 대상자 성함" class="input-field pl-10 h-10 py-0 text-sm w-full border-slate-200">
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <button type="button" id="search-btn" class="btn btn-secondary h-10 px-4 flex-1 sm:flex-none min-w-[100px]">
-                            <span id="search-btn-content">기록 조회</span>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="search-btn" class="btn btn-secondary h-10 px-4">
+                            <span id="search-btn-text">기록 조회</span>
                         </button>
-                        <div id="visit-count-display" title="클릭하여 전체 방문일 목록 보기"></div>
+                        <div id="visit-count-display"></div>
                     </div>
                 </div>
                 
-                <div class="flex items-center gap-2 w-full lg:w-auto justify-end border-t lg:border-t-0 pt-4 lg:pt-0">
-                    <button type="button" id="clear-btn" class="btn btn-danger h-10 flex-1 lg:flex-none">
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                    <button type="button" id="clear-btn" class="btn btn-danger h-10">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
                         <span>초기화</span>
                     </button>
-                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-1 lg:flex-none">
+                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6">
                          <svg id="save-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-6 4l2 2m0 0l2-2m-2 2V3"></path></svg>
                          <span id="save-btn-text">기록 저장</span>
                     </button>
                 </div>
             </div>
 
-            <form id="visit-form" class="p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 transition-all duration-500">
+            <form id="visit-form" class="p-6 md:p-10 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 transition-colors duration-500">
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>방문 일자
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>방문 일자</label>
                     <input type="date" id="visitDate" class="input-field font-medium" required>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>방문 시간
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>방문 시간</label>
                     <div class="flex items-center gap-2">
                         <input type="time" id="startTime" class="input-field" required>
                         <span class="text-slate-300">~</span>
@@ -244,236 +171,187 @@
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 대상자
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 대상자</label>
                     <input type="text" id="targetName" class="input-field" placeholder="대상자 성함" required>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 요청자
-                    </label>
-                    <input type="text" id="requestor" class="input-field" placeholder="본인, 담당 장로 등 직접 입력" required>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 요청자</label>
+                    <select id="requestor" class="input-field" required>
+                        <option value="" disabled selected>요청 구분 선택</option>
+                        <option value="본인">본인</option>
+                        <option value="청지기">청지기</option>
+                        <option value="선교회장">선교회장</option>
+                        <option value="시무권사">시무권사</option>
+                        <option value="담당장로">담당장로</option>
+                        <option value="담임목사">담임목사</option>
+                    </select>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 참가자
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 참가자</label>
                     <input type="text" id="visitorList" class="input-field" placeholder="심방자 전원 이름" required>
                 </div>
 
                 <div class="space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 사유
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 사유</label>
                     <input type="text" id="reason" class="input-field" placeholder="심방의 주된 목적" required>
                 </div>
 
                 <div class="md:col-span-2 space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 장소
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 장소</label>
                     <input type="text" id="location" class="input-field" placeholder="자택, 병원, 교회, 카페 등 상세 장소" required>
                 </div>
 
                 <div class="md:col-span-2 space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>심방 및 상담 상세 내용
-                    </label>
-                    <textarea id="details" rows="2" class="input-field" placeholder="말씀 나눔, 현재 상황, 구체적인 기도 제목 등을 기록하세요." required></textarea>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>심방 및 상담 상세 내용</label>
+                    <textarea id="details" rows="3" class="input-field" placeholder="말씀 나눔, 현재 상황, 구체적인 기도 제목 등을 기록하세요." required></textarea>
                 </div>
 
                 <div class="md:col-span-2 space-y-1">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center">
-                        <span class="label-dot"></span>향후 관리 및 결정 사항
-                    </label>
+                    <label class="text-sm font-bold text-slate-700 uppercase tracking-wider"><span class="label-dot"></span>향후 관리 및 결정 사항</label>
                     <textarea id="followUp" rows="2" class="input-field" placeholder="추가 심방 필요 여부 또는 당부 사항" required></textarea>
                 </div>
             </form>
         </main>
 
         <footer class="text-center text-slate-400 text-xs pb-10">
-            <p>© 2026 시카고 언약장로교회 | 교인 관리 시스템 v2.6</p>
+            <p>© 2024 시카고 언약장로교회 | 관리 시스템 v2.0</p>
         </footer>
     </div>
 
     <script>
-        window.alert = function() { console.warn("Native alert blocked."); };
-        window.confirm = function() { console.warn("Native confirm blocked."); return false; };
+        window.alert = function() { console.warn("브라우저 알림창이 차단되었습니다."); };
+        window.confirm = function() { console.warn("브라우저 확인창이 차단되었습니다."); return false; };
 
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxMH66UDnUN5T-wMPWfimLE9R44x1swXtnjFFhVL0jR0gQ9RieL6EUnGKGbsOpT3WIS-w/exec"; 
-        
-        let currentSearchResults = [];
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAq17JJyn36ZkGXqKXrpF8bXTvZxFBPe_aC2-ehBUcz8X6lvBEP_M624vslr_5e-aHhA/exec"; 
 
         function showMessage(text, type = 'success') {
             const msgBox = document.getElementById('status-msg');
             msgBox.innerText = text;
             msgBox.style.display = 'block';
             
-            const colors = {
-                success: { bg: '#10b981', text: '#ffffff' },
-                error: { bg: '#ef4444', text: '#ffffff' },
-                info: { bg: '#1e293b', text: '#ffffff' }
-            };
-
-            const theme = colors[type] || colors.success;
-            msgBox.style.backgroundColor = theme.bg;
-            msgBox.style.color = theme.text;
+            if (type === 'error') {
+                msgBox.style.backgroundColor = '#ef4444';
+                msgBox.style.color = '#ffffff';
+            } else if (type === 'info') {
+                msgBox.style.backgroundColor = '#1e293b';
+                msgBox.style.color = '#ffffff';
+            } else {
+                msgBox.style.backgroundColor = '#10b981';
+                msgBox.style.color = '#ffffff';
+            }
 
             setTimeout(() => {
                 msgBox.style.opacity = '1';
                 msgBox.style.transform = 'translateX(-50%) translateY(0)';
-            }, 50);
+            }, 10);
 
             setTimeout(() => {
                 msgBox.style.opacity = '0';
                 msgBox.style.transform = 'translateX(-50%) translateY(-20px)';
-                setTimeout(() => { msgBox.style.display = 'none'; }, 400);
-            }, 3500);
+                setTimeout(() => {
+                    msgBox.style.display = 'none';
+                }, 400);
+            }, 3000);
         }
 
+        /**
+         * 폼 초기화 실행 (모달 없이 즉시 실행으로 수정)
+         */
         function executeClear() {
             document.getElementById('visit-form').reset();
             document.getElementById('search-name').value = '';
             document.getElementById('visit-count-display').style.display = 'none';
-            currentSearchResults = [];
-            setTodayDate();
-            showMessage("입력 내용이 초기화되었습니다.", "info");
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function setTodayDate() {
-            const today = new Date().toLocaleDateString('en-CA');
+            const today = new Date().toISOString().split('T')[0];
             document.getElementById('visitDate').value = today;
+            showMessage("모든 입력란이 초기화되었습니다.", "info");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function formatTime(timeStr) {
             if (!timeStr) return '';
             if (timeStr.toString().includes('T')) {
-                return new Date(timeStr).toTimeString().slice(0, 5);
+                const d = new Date(timeStr);
+                return d.toTimeString().slice(0, 5);
             }
             return timeStr.toString().slice(0, 5);
         }
 
         function fillForm(data) {
             if (!data) return;
-            try {
-                if (data.date) {
-                    const d = new Date(data.date);
-                    if (!isNaN(d)) document.getElementById('visitDate').value = d.toISOString().split('T')[0];
-                }
-                document.getElementById('startTime').value = formatTime(data.start);
-                document.getElementById('endTime').value = formatTime(data.end);
-                document.getElementById('targetName').value = data.target || '';
-                document.getElementById('visitorList').value = data.visitors || '';
-                document.getElementById('requestor').value = data.req || '';
-                document.getElementById('reason').value = data.res || '';
-                document.getElementById('location').value = data.loc || '';
-                document.getElementById('details').value = data.det || '';
-                document.getElementById('followUp').value = data.fup || '';
-                
-                const form = document.getElementById('visit-form');
-                form.classList.add('bg-indigo-50/50');
-                setTimeout(() => form.classList.remove('bg-indigo-50/50'), 1000);
-            } catch (e) {
-                console.error("Form fill error:", e);
+            let dateVal = '';
+            if (data.date) {
+                const d = new Date(data.date);
+                if (!isNaN(d)) dateVal = d.toISOString().split('T')[0];
             }
-        }
 
-        function openHistoryModal() {
-            if (currentSearchResults.length === 0) return;
+            document.getElementById('visitDate').value = dateVal;
+            document.getElementById('startTime').value = formatTime(data.start);
+            document.getElementById('endTime').value = formatTime(data.end);
+            document.getElementById('targetName').value = data.target || '';
+            document.getElementById('visitorList').value = data.visitors || '';
+            document.getElementById('requestor').value = data.req || '';
+            document.getElementById('reason').value = data.res || '';
+            document.getElementById('location').value = data.loc || '';
+            document.getElementById('details').value = data.det || '';
+            document.getElementById('followUp').value = data.fup || '';
             
-            const listContainer = document.getElementById('history-list');
-            listContainer.innerHTML = '';
-            
-            const sortedResults = [...currentSearchResults].reverse();
-            
-            sortedResults.forEach((record, index) => {
-                const dateStr = record.date ? new Date(record.date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }) : '날짜 없음';
-                const reasonStr = record.res || '사유 미입력';
-                
-                const item = document.createElement('div');
-                item.className = 'p-3 hover:bg-indigo-50 rounded-lg cursor-pointer transition-colors border-b border-slate-50 last:border-0 group';
-                item.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-slate-700 group-hover:text-indigo-600">${dateStr}</span>
-                        <svg class="w-4 h-4 text-slate-300 group-hover:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </div>
-                    <div class="text-xs text-slate-400 mt-1 truncate">${reasonStr}</div>
-                `;
-                item.onclick = () => {
-                    fillForm(record);
-                    closeModal();
-                    showMessage(`${dateStr}의 기록을 불러왔습니다.`, 'info');
-                };
-                listContainer.appendChild(item);
-            });
-            
-            document.getElementById('history-modal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('history-modal').style.display = 'none';
+            const form = document.getElementById('visit-form');
+            form.classList.add('bg-indigo-50/30');
+            setTimeout(() => form.classList.remove('bg-indigo-50/30'), 1500);
         }
 
         async function performSearch() {
-            const nameInput = document.getElementById('search-name');
-            const name = nameInput.value.trim();
+            const name = document.getElementById('search-name').value.trim();
             const countDisplay = document.getElementById('visit-count-display');
-            const btnContent = document.getElementById('search-btn-content');
-            const btn = document.getElementById('search-btn');
             
             if (!name) { 
                 showMessage("조회할 성함을 입력하세요.", "error"); 
-                nameInput.focus();
                 return; 
             }
 
-            const originalContent = btnContent.innerHTML;
+            const btn = document.getElementById('search-btn');
+            const originalContent = btn.innerHTML;
+            
             btn.disabled = true;
-            
-            // 화살표 애니메이션과 텍스트로 변경
-            btnContent.innerHTML = `
-                <div class="arrow-loading">
-                    <span>조회 중</span>
-                    <svg class="w-4 h-4 arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-                    </svg>
-                </div>
-            `;
-            
+            btn.innerHTML = `<div class="loading-spinner"></div>`;
             countDisplay.style.display = 'none';
-            currentSearchResults = [];
 
             try {
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
                 const results = await response.json();
                 
                 if (results && results.length > 0) {
-                    currentSearchResults = results;
-                    countDisplay.innerText = `총 ${results.length}회 기록 ▶`;
+                    countDisplay.innerText = `총 ${results.length}회 심방`;
                     countDisplay.style.display = 'inline-flex';
                     fillForm(results[results.length - 1]);
-                    showMessage(`'${name}' 성도님의 최근 기록을 불러왔습니다.`);
+                    showMessage(`'${name}' 성도님의 기록을 불러왔습니다.`);
                 } else {
                     showMessage("해당 이름으로 등록된 기록이 없습니다.", "error");
                 }
             } catch (error) {
-                console.error("Search Error:", error);
+                console.error(error);
                 showMessage("데이터 조회 중 오류가 발생했습니다.", "error");
             } finally {
                 btn.disabled = false;
-                btnContent.innerHTML = originalContent;
+                btn.innerHTML = originalContent;
             }
         }
 
-        async function handleSave() {
+        document.getElementById('search-btn').addEventListener('click', performSearch);
+        document.getElementById('clear-btn').addEventListener('click', executeClear);
+        document.getElementById('search-name').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', async () => {
             const form = document.getElementById('visit-form');
+            
             if (!form.checkValidity()) {
-                showMessage("모든 필수 항목을 작성해주세요.", "error");
-                form.reportValidity();
+                showMessage("필수 항목(*)을 모두 입력해주세요.", "error");
+                const firstInvalid = form.querySelector(':invalid');
+                if (firstInvalid) firstInvalid.focus();
                 return;
             }
 
@@ -510,40 +388,26 @@
                 
                 showMessage("심방 기록이 성공적으로 저장되었습니다.");
                 form.reset();
-                setTodayDate();
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('visitDate').value = today;
                 document.getElementById('visit-count-display').style.display = 'none';
                 document.getElementById('search-name').value = '';
-                currentSearchResults = [];
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 
             } catch (error) {
-                console.error("Save Error:", error);
-                showMessage("저장 중 오류가 발생했습니다.", "error");
+                console.error(error);
+                showMessage("저장 중 서버 연결 오류가 발생했습니다.", "error");
             } finally {
                 btn.disabled = false;
                 icon.classList.remove('hidden');
                 btnText.innerText = originalText;
             }
-        }
-
-        document.getElementById('search-btn').addEventListener('click', performSearch);
-        document.getElementById('clear-btn').addEventListener('click', executeClear);
-        document.getElementById('save-btn').addEventListener('click', handleSave);
-        document.getElementById('visit-count-display').addEventListener('click', openHistoryModal);
-        
-        document.getElementById('search-name').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
         });
 
         window.onload = () => {
-            setTodayDate();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('visitDate').value = today;
         };
     </script>
 </body>
 </html>
-
-

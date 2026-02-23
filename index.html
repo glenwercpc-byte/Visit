@@ -221,10 +221,12 @@
     </div>
 
     <script>
+        // 브라우저 기본 알림창 차단
         window.alert = function() { console.warn("브라우저 알림창이 차단되었습니다."); };
         window.confirm = function() { console.warn("브라우저 확인창이 차단되었습니다."); return false; };
 
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAq17JJyn36ZkGXqKXrpF8bXTvZxFBPe_aC2-ehBUcz8X6lvBEP_M624vslr_5e-aHhA/exec"; 
+        // [중요] 여기에 배포된 구글 앱스 스크립트 URL을 입력하세요.
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysXkr9OEVnX43o2IvcG-XwZTkOTPazHsw54LsgZNDuDiwmGvaDu2lkAQQ3cwzMDDhb/exec"; 
 
         function showMessage(text, type = 'success') {
             const msgBox = document.getElementById('status-msg');
@@ -256,9 +258,6 @@
             }, 3000);
         }
 
-        /**
-         * 폼 초기화 실행 (모달 없이 즉시 실행으로 수정)
-         */
         function executeClear() {
             document.getElementById('visit-form').reset();
             document.getElementById('search-name').value = '';
@@ -271,7 +270,7 @@
 
         function formatTime(timeStr) {
             if (!timeStr) return '';
-            if (timeStr.toString().includes('T')) {
+            if (timeStr.toString().includes('T') || !isNaN(Date.parse(timeStr))) {
                 const d = new Date(timeStr);
                 return d.toTimeString().slice(0, 5);
             }

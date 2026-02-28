@@ -271,12 +271,15 @@
         document.getElementById('search-btn').onclick = search;
         document.getElementById('save-btn').onclick = save;
         document.getElementById('visit-count-display').onclick = openModal;
+        
+        // 초기화 버튼 클릭 핸들러: confirm 알림창 제거
         document.getElementById('clear-btn').onclick = () => { 
-            // 확인 알림 표시 제거 후 즉시 초기화
             document.getElementById('visit-form').reset(); 
-            document.getElementById('visit-count-display').style.display='none';
+            document.getElementById('visit-count-display').style.display = 'none';
             resetDateToToday();
+            showMessage("입력 양식이 초기화되었습니다.");
         };
+
         document.getElementById('search-name').onkeypress = (e) => { if(e.key === 'Enter') search(); };
         window.onload = resetDateToToday;
     </script>

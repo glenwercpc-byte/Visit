@@ -254,7 +254,7 @@
                 showMessage("저장 및 전송 완료");
                 form.reset();
                 document.getElementById('visit-count-display').style.display = 'none';
-                window.onload(); 
+                resetDateToToday(); 
             } catch(e) {
                 showMessage("저장 실패", "error");
             } finally {
@@ -263,21 +263,22 @@
             }
         }
 
+        function resetDateToToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('visitDate').value = today;
+        }
+
         document.getElementById('search-btn').onclick = search;
         document.getElementById('save-btn').onclick = save;
         document.getElementById('visit-count-display').onclick = openModal;
         document.getElementById('clear-btn').onclick = () => { 
-            if(confirm("초기화할까요?")) { 
-                document.getElementById('visit-form').reset(); 
-                document.getElementById('visit-count-display').style.display='none';
-                window.onload();
-            } 
+            // 확인 알림 표시 제거 후 즉시 초기화
+            document.getElementById('visit-form').reset(); 
+            document.getElementById('visit-count-display').style.display='none';
+            resetDateToToday();
         };
         document.getElementById('search-name').onkeypress = (e) => { if(e.key === 'Enter') search(); };
-        window.onload = () => { 
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('visitDate').value = today; 
-        };
+        window.onload = resetDateToToday;
     </script>
 </body>
 </html>

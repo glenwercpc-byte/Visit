@@ -20,12 +20,11 @@
         #history-modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; }
         .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 1rem; max-height: 80vh; display: flex; flex-direction: column; }
         
-        /* 타이틀 스타일 수정: Black & Bold */
         .form-label { 
             display: block;
             font-size: 0.75rem; 
-            font-weight: 800; /* Extra Bold */
-            color: #0f172a; /* Slate-900 (사실상 검정색에 가까운 깊은 네이비) */
+            font-weight: 800;
+            color: #0f172a;
             text-transform: uppercase; 
             letter-spacing: 0.02em;
             margin-bottom: 0.25rem;
@@ -36,7 +35,6 @@
 
     <div id="status-msg"></div>
 
-    <!-- 심방 이력 선택 모달 -->
     <div id="history-modal" onclick="closeModal()">
         <div class="modal-content shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -60,7 +58,6 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <!-- 검색 및 제어부 -->
             <div class="p-4 bg-white border-b border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <div class="relative w-full md:w-56">
@@ -76,8 +73,9 @@
                 </div>
             </div>
 
-            <!-- 입력 폼 -->
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <input type="hidden" id="rowId" value="">
+                
                 <div class="space-y-1">
                     <label class="form-label">심방날짜</label>
                     <input type="date" id="visitDate" class="input-field text-base font-semibold" required>
@@ -142,6 +140,7 @@
 
         function fillForm(data) {
             if(!data) return;
+            document.getElementById('rowId').value = data.row || '';
             document.getElementById('visitDate').value = cleanDateString(data.visitDate);
             document.getElementById('startTime').value = formatTimeForInput(data.startTime);
             document.getElementById('endTime').value = formatTimeForInput(data.endTime);
@@ -152,8 +151,12 @@
             document.getElementById('location').value = data.location || '';
             document.getElementById('details').value = data.details || '';
             document.getElementById('followUp').value = data.followUp || '';
+            
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.innerText = "수정 내용 저장";
+            
             closeModal();
-            showMessage(`${cleanDateString(data.visitDate)} 기록 로드 완료`);
+            showMessage(`${cleanDateString(data.visitDate)} 기록 로드 완료 (수정 모드)`);
         }
 
         function openModal() {
@@ -192,7 +195,6 @@
             const name = document.getElementById('search-name').value.trim();
             if(!name) return showMessage("성함을 입력해 주세요.", "error");
             
-            // 검색 시작 시 이전 검색 건수 알림 제거
             document.getElementById('visit-count-display').style.display = 'none';
             
             const btn = document.getElementById('search-btn');
@@ -228,10 +230,14 @@
             if(!form.checkValidity()) return form.reportValidity();
 
             const btn = document.getElementById('save-btn');
+            const rowId = document.getElementById('rowId').value;
+            
             btn.disabled = true;
-            btn.innerText = "저장 중...";
+            btn.innerText = rowId ? "수정 사항 저장 중..." : "저장 중...";
 
             const payload = {
+                action: rowId ? "update" : "save",
+                row: rowId,
                 visitDate: document.getElementById('visitDate').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
@@ -254,16 +260,35 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: params.toString() 
                 });
-                showMessage("저장 및 전송 완료");
-                form.reset();
-                document.getElementById('visit-count-display').style.display = 'none';
-                resetDateToToday(); 
+                
+                showMessage(rowId ? "수정이 완료되었습니다." : "저장 및 전송 완료");
+                resetAll(); 
             } catch(e) {
-                showMessage("저장 실패", "error");
+                showMessage("처리 실패", "error");
             } finally {
                 btn.disabled = false;
                 btn.innerText = "기록 저장";
             }
+        }
+
+        /**
+         * 전체 초기화 함수: 저장 후 또는 초기화 버튼 클릭 시 호출
+         * - 검색 입력 필드까지 클리어하도록 수정됨
+         */
+        function resetAll() {
+            // 폼 필드 초기화
+            document.getElementById('visit-form').reset();
+            document.getElementById('rowId').value = "";
+            
+            // 검색 필드 초기화 (추가된 기능)
+            document.getElementById('search-name').value = "";
+            
+            // UI 요소 초기화
+            document.getElementById('visit-count-display').style.display = 'none';
+            document.getElementById('save-btn').innerText = "기록 저장";
+            currentSearchResults = [];
+            
+            resetDateToToday();
         }
 
         function resetDateToToday() {
@@ -275,11 +300,8 @@
         document.getElementById('save-btn').onclick = save;
         document.getElementById('visit-count-display').onclick = openModal;
         
-        // 초기화 버튼 클릭 핸들러: confirm 알림창 제거
         document.getElementById('clear-btn').onclick = () => { 
-            document.getElementById('visit-form').reset(); 
-            document.getElementById('visit-count-display').style.display = 'none';
-            resetDateToToday();
+            resetAll();
             showMessage("입력 양식이 초기화되었습니다.");
         };
 

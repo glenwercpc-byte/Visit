@@ -38,9 +38,7 @@
     <div id="history-modal" onclick="closeModal()">
         <div class="modal-content shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <div>
-                    <h3 class="font-bold text-slate-800 text-base">심방 이력 선택</h3>
-                </div>
+                <h3 class="font-bold text-slate-800 text-base">심방 이력 선택</h3>
                 <button onclick="closeModal()" class="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -50,11 +48,9 @@
     </div>
 
     <div class="max-w-4xl mx-auto space-y-3">
-        <header class="flex flex-col md:flex-row justify-between items-end gap-1">
-            <div>
-                <h1 class="text-slate-900 font-extrabold text-2xl tracking-tight">교인 심방 기록 시스템</h1>
-                <p class="text-slate-500 text-sm font-medium">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
-            </div>
+        <header>
+            <h1 class="text-slate-900 font-extrabold text-2xl tracking-tight">교인 심방 기록 시스템</h1>
+            <p class="text-slate-500 text-sm font-medium">시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
         </header>
 
         <main class="form-card overflow-hidden">
@@ -65,15 +61,18 @@
                         <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                     <button id="search-btn" class="btn btn-secondary h-10 px-4 text-sm hover:bg-slate-50">조회</button>
-                    <div id="visit-count-display"></div>
+                    <div id="visit-count-display" title="클릭하여 과거 이력 보기"></div>
                 </div>
                 <div class="flex gap-2 w-full lg:w-auto">
                     <button id="clear-btn" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
-                    <button id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">기록 저장</button>
+                    <button id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
+                        <span id="save-btn-text">기록 저장</span>
+                    </button>
                 </div>
             </div>
 
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <!-- rowId: 조회된 기록의 실제 행 번호를 저장하여 수정 시 사용 -->
                 <input type="hidden" id="rowId" value="">
                 
                 <div class="space-y-1">
@@ -93,16 +92,8 @@
                 <div class="space-y-1"><label class="form-label">요청자</label><input type="text" id="requestor" class="input-field text-sm"></div>
                 <div class="space-y-1"><label class="form-label">사유</label><input type="text" id="reason" class="input-field text-sm"></div>
                 <div class="md:col-span-2 space-y-1"><label class="form-label">장소</label><input type="text" id="location" class="input-field text-sm"></div>
-                
-                <div class="md:col-span-2 space-y-1">
-                    <label class="form-label">상세내용</label>
-                    <textarea id="details" rows="2" class="input-field text-sm resize-none" required></textarea>
-                </div>
-                
-                <div class="md:col-span-2 space-y-1">
-                    <label class="form-label">향후관리</label>
-                    <textarea id="followUp" rows="2" class="input-field text-sm resize-none"></textarea>
-                </div>
+                <div class="md:col-span-2 space-y-1"><label class="form-label">상세내용</label><textarea id="details" rows="3" class="input-field text-sm resize-none" required></textarea></div>
+                <div class="md:col-span-2 space-y-1"><label class="form-label">향후관리</label><textarea id="followUp" rows="2" class="input-field text-sm resize-none"></textarea></div>
             </form>
         </main>
     </div>
@@ -122,24 +113,18 @@
 
         function cleanDateString(dateStr) {
             if (!dateStr) return "";
-            const cleaned = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
-            return cleaned.substring(0, 10);
+            return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.split(' ')[0];
         }
 
         function formatTimeForInput(timeStr) {
             if (!timeStr) return "";
-            if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
             const match = timeStr.match(/(\d{1,2}):(\d{2})/);
-            if (match) {
-                let hh = match[1].padStart(2, '0');
-                let mm = match[2];
-                return `${hh}:${mm}`;
-            }
-            return "";
+            return match ? `${match[1].padStart(2, '0')}:${match[2]}` : "";
         }
 
         function fillForm(data) {
             if(!data) return;
+            // 중요: GAS에서 받아온 실제 행 번호(row)를 hidden 필드에 저장
             document.getElementById('rowId').value = data.row || '';
             document.getElementById('visitDate').value = cleanDateString(data.visitDate);
             document.getElementById('startTime').value = formatTimeForInput(data.startTime);
@@ -152,37 +137,26 @@
             document.getElementById('details').value = data.details || '';
             document.getElementById('followUp').value = data.followUp || '';
             
-            const saveBtn = document.getElementById('save-btn');
-            saveBtn.innerText = "수정 내용 저장";
-            
+            document.getElementById('save-btn-text').innerText = "기존 기록 업데이트(수정)";
             closeModal();
-            showMessage(`${cleanDateString(data.visitDate)} 기록 로드 완료 (수정 모드)`);
+            showMessage("기존 기록을 불러왔습니다. 수정 후 저장을 누르면 해당 행이 업데이트됩니다.");
         }
 
         function openModal() {
             if(currentSearchResults.length === 0) return;
             const list = document.getElementById('history-list');
             list.innerHTML = '';
-            
-            const sorted = [...currentSearchResults].sort((a,b) => {
-                const dateA = cleanDateString(a.visitDate);
-                const dateB = cleanDateString(b.visitDate);
-                return dateB.localeCompare(dateA);
-            });
-            
+            const sorted = [...currentSearchResults].sort((a,b) => cleanDateString(b.visitDate).localeCompare(cleanDateString(a.visitDate)));
             sorted.forEach((item) => {
-                const displayDate = cleanDateString(item.visitDate);
                 const itemDiv = document.createElement('div');
-                itemDiv.className = "group p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition-all shadow-sm flex flex-col gap-1";
+                itemDiv.className = "group p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition-all flex flex-col gap-1";
                 itemDiv.onclick = () => fillForm(item);
                 itemDiv.innerHTML = `
                     <div class="flex justify-between items-center">
-                        <span class="text-base font-bold text-slate-800 group-hover:text-indigo-600">${displayDate}</span>
-                        <span class="text-[10px] text-slate-300 font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100 italic">선택 →</span>
+                        <span class="text-base font-bold text-slate-800 group-hover:text-indigo-600">${cleanDateString(item.visitDate)}</span>
+                        <span class="text-[10px] text-slate-400 italic">선택 시 로드</span>
                     </div>
-                    <div class="text-xs text-slate-500 line-clamp-1 italic">
-                        <span class="font-semibold text-slate-400 not-italic mr-1">사유:</span>${item.reason || '사유 미기재'}
-                    </div>
+                    <div class="text-xs text-slate-500 line-clamp-1 italic">${item.reason || '사유 없음'}</div>
                 `;
                 list.appendChild(itemDiv);
             });
@@ -193,33 +167,27 @@
 
         async function search() {
             const name = document.getElementById('search-name').value.trim();
-            if(!name) return showMessage("성함을 입력해 주세요.", "error");
-            
+            if(!name) return showMessage("검색할 성함을 입력하세요.", "error");
             document.getElementById('visit-count-display').style.display = 'none';
-            
             const btn = document.getElementById('search-btn');
             btn.disabled = true;
-            btn.innerHTML = `<span class="flex items-center gap-1"><svg class="animate-spin h-3 w-3 text-slate-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 조회 중</span>`;
+            btn.innerText = "조회 중...";
 
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
                 const results = await res.json();
                 currentSearchResults = results || [];
-                
                 if(currentSearchResults.length > 0) {
                     const badge = document.getElementById('visit-count-display');
-                    badge.innerHTML = `<span class="flex items-center gap-1">총 <strong>${currentSearchResults.length}건</strong> <span class="bg-indigo-200 px-1.5 py-0.5 rounded text-[9px]">목록</span></span>`;
+                    badge.innerHTML = `총 <strong>${currentSearchResults.length}건</strong> <span class="text-[10px] ml-1">▼</span>`;
                     badge.style.display = 'inline-block';
-                    
                     const latest = [...currentSearchResults].sort((a,b) => cleanDateString(b.visitDate).localeCompare(cleanDateString(a.visitDate)))[0];
                     fillForm(latest);
                 } else {
                     showMessage("기록이 없습니다.", "error");
-                    document.getElementById('visit-count-display').style.display = 'none';
+                    resetAll();
                 }
-            } catch(e) {
-                showMessage("조회 실패", "error");
-            } finally {
+            } catch(e) { showMessage("조회 오류", "error"); } finally {
                 btn.disabled = false;
                 btn.innerText = "조회";
             }
@@ -230,14 +198,16 @@
             if(!form.checkValidity()) return form.reportValidity();
 
             const btn = document.getElementById('save-btn');
+            const btnText = document.getElementById('save-btn-text');
             const rowId = document.getElementById('rowId').value;
             
             btn.disabled = true;
-            btn.innerText = rowId ? "수정 사항 저장 중..." : "저장 중...";
+            btnText.innerText = rowId ? "기존 행 업데이트 중..." : "새 기록 저장 중...";
 
+            // rowId가 있으면 action은 update, 없으면 save가 됨
             const payload = {
                 action: rowId ? "update" : "save",
-                row: rowId,
+                row: rowId, 
                 visitDate: document.getElementById('visitDate').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
@@ -257,56 +227,32 @@
                 await fetch(APPS_SCRIPT_URL, { 
                     method: 'POST', 
                     mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: params.toString() 
                 });
-                
-                showMessage(rowId ? "수정이 완료되었습니다." : "저장 및 전송 완료");
+                showMessage(rowId ? "기록이 업데이트되었습니다." : "새 기록이 저장되었습니다.");
                 resetAll(); 
-            } catch(e) {
-                showMessage("처리 실패", "error");
-            } finally {
+            } catch(e) { showMessage("처리 실패", "error"); } finally {
                 btn.disabled = false;
-                btn.innerText = "기록 저장";
+                btnText.innerText = "기록 저장";
             }
         }
 
-        /**
-         * 전체 초기화 함수: 저장 후 또는 초기화 버튼 클릭 시 호출
-         * - 검색 입력 필드까지 클리어하도록 수정됨
-         */
         function resetAll() {
-            // 폼 필드 초기화
             document.getElementById('visit-form').reset();
             document.getElementById('rowId').value = "";
-            
-            // 검색 필드 초기화 (추가된 기능)
             document.getElementById('search-name').value = "";
-            
-            // UI 요소 초기화
             document.getElementById('visit-count-display').style.display = 'none';
-            document.getElementById('save-btn').innerText = "기록 저장";
+            document.getElementById('save-btn-text').innerText = "기록 저장";
             currentSearchResults = [];
-            
-            resetDateToToday();
-        }
-
-        function resetDateToToday() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('visitDate').value = today;
+            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
         }
 
         document.getElementById('search-btn').onclick = search;
         document.getElementById('save-btn').onclick = save;
         document.getElementById('visit-count-display').onclick = openModal;
-        
-        document.getElementById('clear-btn').onclick = () => { 
-            resetAll();
-            showMessage("입력 양식이 초기화되었습니다.");
-        };
-
+        document.getElementById('clear-btn').onclick = resetAll;
         document.getElementById('search-name').onkeypress = (e) => { if(e.key === 'Enter') search(); };
-        window.onload = resetDateToToday;
+        window.onload = () => document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
     </script>
 </body>
 </html>

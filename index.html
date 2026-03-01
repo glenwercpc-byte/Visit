@@ -9,12 +9,30 @@
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; color: #1e293b; }
         .form-card { background-color: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .input-field { border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 0.5rem 0.75rem; width: 100%; transition: all 0.2s; background-color: #f8fafc; }
-        .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        
+        /* 입력 필드 가독성 강화: 테두리 색상을 더 진하게 변경 (#cbd5e1) */
+        .input-field { 
+            border: 1.5px solid #cbd5e1; 
+            border-radius: 0.5rem; 
+            padding: 0.5rem 0.75rem; 
+            width: 100%; 
+            transition: all 0.2s; 
+            background-color: #ffffff; 
+        }
+        
+        /* 포커스 시 아웃라인 및 배경색 강조 */
+        .input-field:focus { 
+            outline: none; 
+            border-color: #6366f1; 
+            background-color: #fff; 
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); 
+        }
+        
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; gap: 0.4rem; transition: all 0.2s; }
         .btn-primary { background-color: #6366f1; color: white; }
-        .btn-secondary { background-color: #fff; border-color: #e2e8f0; color: #475569; border-width: 1px; }
-        .btn-danger { background-color: #fff; border-color: #fee2e2; color: #ef4444; border-width: 1px; }
+        .btn-secondary { background-color: #fff; border-color: #94a3b8; color: #334155; border-width: 1px; }
+        .btn-danger { background-color: #fff; border-color: #fca5a5; color: #ef4444; border-width: 1px; }
+        
         #status-msg { display: none; position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 0.75rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-weight: 700; text-align: center; min-width: 250px; }
         #visit-count-display { font-size: 0.75rem; font-weight: 700; color: #6366f1; background-color: #eef2ff; padding: 0.4rem 0.75rem; border-radius: 9999px; display: none; border: 1px solid #c7d2fe; cursor: pointer; }
         #history-modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; }
@@ -24,7 +42,7 @@
             display: block;
             font-size: 0.75rem; 
             font-weight: 800;
-            color: #0f172a;
+            color: #334155;
             text-transform: uppercase; 
             letter-spacing: 0.02em;
             margin-bottom: 0.25rem;
@@ -54,17 +72,17 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <div class="p-4 bg-white border-b border-slate-100 flex flex-col lg:flex-row justify-between items-center gap-3">
+            <div class="p-4 bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <div class="relative w-full md:w-56">
                         <input type="text" id="search-name" placeholder="교인 성함 입력" class="input-field h-10 pl-9 text-sm">
                         <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <button id="search-btn" class="btn btn-secondary h-10 px-4 text-sm hover:bg-slate-50">조회</button>
+                    <button id="search-btn" class="btn btn-secondary h-10 px-4 text-sm hover:bg-slate-50 border-slate-400">조회</button>
                     <div id="visit-count-display" title="클릭하여 과거 이력 보기"></div>
                 </div>
                 <div class="flex gap-2 w-full lg:w-auto">
-                    <button id="clear-btn" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
+                    <button id="clear-btn" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm border-red-300">초기화</button>
                     <button id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
                     </button>
@@ -72,7 +90,6 @@
             </div>
 
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <!-- rowId: 조회된 기록의 실제 행 번호를 저장하여 수정 시 사용 -->
                 <input type="hidden" id="rowId" value="">
                 
                 <div class="space-y-1">
@@ -83,7 +100,7 @@
                     <label class="form-label">심방시간</label>
                     <div class="flex items-center gap-2">
                         <input type="time" id="startTime" class="input-field font-mono text-sm" required>
-                        <span class="text-slate-300">~</span>
+                        <span class="text-slate-400 font-bold">~</span>
                         <input type="time" id="endTime" class="input-field font-mono text-sm" required>
                     </div>
                 </div>
@@ -124,7 +141,6 @@
 
         function fillForm(data) {
             if(!data) return;
-            // 중요: GAS에서 받아온 실제 행 번호(row)를 hidden 필드에 저장
             document.getElementById('rowId').value = data.row || '';
             document.getElementById('visitDate').value = cleanDateString(data.visitDate);
             document.getElementById('startTime').value = formatTimeForInput(data.startTime);
@@ -204,7 +220,6 @@
             btn.disabled = true;
             btnText.innerText = rowId ? "기존 행 업데이트 중..." : "새 기록 저장 중...";
 
-            // rowId가 있으면 action은 update, 없으면 save가 됨
             const payload = {
                 action: rowId ? "update" : "save",
                 row: rowId, 

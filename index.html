@@ -11,15 +11,38 @@
         .form-card { background-color: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .input-field { border: 1.5px solid #cbd5e1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; width: 100%; transition: all 0.2s; background-color: #ffffff; }
         .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
-        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; gap: 0.4rem; transition: all 0.2s; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; gap: 0.4rem; transition: all 0.2s; border: 1px solid transparent; }
         .btn-primary { background-color: #6366f1; color: white; }
-        .btn-secondary { background-color: #fff; border-color: #94a3b8; color: #334155; border-width: 1px; }
-        .btn-danger { background-color: #fff; border-color: #fca5a5; color: #ef4444; border-width: 1px; }
+        .btn-secondary { background-color: #fff; border-color: #94a3b8; color: #334155; }
+        .btn-danger { background-color: #fff; border-color: #fca5a5; color: #ef4444; }
         #status-msg { display: none; position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 0.75rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-weight: 700; text-align: center; min-width: 250px; }
-        #visit-count-display { font-size: 0.75rem; font-weight: 700; color: #6366f1; background-color: #eef2ff; padding: 0.4rem 0.75rem; border-radius: 9999px; display: none; border: 1px solid #c7d2fe; cursor: pointer; }
+        
+        #visit-count-display { 
+            display: none; 
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem; 
+            font-weight: 700; 
+            color: #4f46e5; 
+            background-color: #eef2ff; 
+            padding: 0.4rem 0.85rem; 
+            border-radius: 9999px; 
+            border: 1px solid #c7d2fe; 
+            cursor: pointer; 
+        }
+        
         .form-label { display: block; font-size: 0.75rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 0.25rem; }
+        
         #history-modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 1rem; }
         .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 1rem; max-height: 80vh; display: flex; flex-direction: column; }
+
+        .spinner {
+            animation: rotate 1s linear infinite;
+            width: 1rem;
+            height: 1rem;
+            display: none;
+        }
+        @keyframes rotate { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-2 md:p-4">
@@ -30,12 +53,15 @@
     <div id="history-modal" onclick="closeModal()">
         <div class="modal-content shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 text-base">심방 이력 선택</h3>
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base">심방 기록 선택</h3>
+                    <p id="modal-target-info" class="text-xs text-indigo-600 font-semibold">최신순 정렬</p>
+                </div>
                 <button onclick="closeModal()" class="p-1 hover:bg-slate-200 rounded-full text-slate-500">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
                 </button>
             </div>
-            <div id="history-list" class="overflow-y-auto p-3 space-y-2"></div>
+            <div id="history-list" class="overflow-y-auto p-3 space-y-2 bg-white"></div>
         </div>
     </div>
 
@@ -46,25 +72,28 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <!-- 상단 제어바 -->
             <div class="p-4 bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                    <div class="relative w-full md:w-56">
-                        <input type="text" id="search-name" placeholder="심방 대상자 성함 입력" class="input-field h-10 pl-9 text-sm">
+                    <div class="relative w-full md:w-32">
+                        <input type="text" id="search-name" placeholder="성함" class="input-field h-10 pl-9 text-sm">
                         <svg class="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <button id="search-btn" class="btn btn-secondary h-10 px-4 text-sm hover:bg-slate-50">조회</button>
-                    <div id="visit-count-display"></div>
+                    <button id="search-btn" class="btn btn-secondary h-10 px-4 text-sm hover:bg-slate-50 min-w-[80px]">
+                        <svg id="search-spinner" class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                        </svg>
+                        <span id="search-btn-text">조회</span>
+                    </button>
+                    <div id="visit-count-display" onclick="openHistoryList()"></div>
                 </div>
                 <div class="flex gap-2 w-full lg:w-auto">
-                    <button id="clear-btn" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
-                    <button id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
+                    <button type="button" id="clear-btn" onclick="clearFormOnly(true)" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
+                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 입력 폼 -->
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <input type="hidden" id="rowId" value="">
                 
@@ -88,22 +117,22 @@
                 </div>
                 
                 <div class="space-y-1">
+                    <label class="form-label">요청자</label>
+                    <input type="text" id="requestor" class="input-field text-sm" placeholder="심방 요청자">
+                </div>
+
+                <div class="space-y-1">
                     <label class="form-label">심방 참가자</label>
                     <input type="text" id="visitorList" class="input-field text-sm" required placeholder="참석자 명단">
                 </div>
                 
                 <div class="space-y-1">
-                    <label class="form-label">요청자</label>
-                    <input type="text" id="requestor" class="input-field text-sm" placeholder="심방 요청자">
-                </div>
-                
-                <div class="space-y-1">
-                    <label class="form-label">사유 / 목적 (F열)</label>
+                    <label class="form-label">사유 / 목적</label>
                     <input type="text" id="reason" class="input-field text-sm" placeholder="예: 병문안, 새가족">
                 </div>
                 
                 <div class="md:col-span-2 space-y-1">
-                    <label class="form-label">장소 (G열)</label>
+                    <label class="form-label">장소</label>
                     <input type="text" id="location" class="input-field text-sm" placeholder="심방 장소">
                 </div>
                 
@@ -121,7 +150,7 @@
     </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxInday-F-oPLDL5DG9hwjNQTBblecFTPru_aa8usnAp9BvUOMaIrJUK2cjEu-sZ40aKA/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDpHXqi7WCjAqSHPlQIzmM58YAPoNUTO0LMKG7bydCcF-A7XGcQGXYirPww9_OeLyv2Q/exec";
         let currentSearchResults = [];
 
         function showMessage(text, type='success') {
@@ -133,78 +162,115 @@
             setTimeout(() => { m.style.display = 'none'; }, 3000);
         }
 
-        function resetFormOnly() {
-            document.getElementById('visit-form').reset();
-            document.getElementById('rowId').value = "";
-            document.getElementById('save-btn-text').innerText = "기록 저장";
-            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('visit-count-display').style.display = 'none';
+        function clearFormOnly(confirmNeeded = false) {
+            if (confirmNeeded && !confirm("모든 입력 내용을 지우고 초기 상태로 되돌릴까요?")) return;
+            try {
+                const form = document.getElementById('visit-form');
+                if (form) form.reset();
+                const inputs = document.querySelectorAll('#visit-form input:not([type="date"]):not([type="time"]), #visit-form textarea');
+                inputs.forEach(el => el.value = "");
+                const rowIdEl = document.getElementById('rowId');
+                if (rowIdEl) rowIdEl.value = "";
+                const searchInput = document.getElementById('search-name');
+                if (searchInput) searchInput.value = "";
+                currentSearchResults = [];
+                const badge = document.getElementById('visit-count-display');
+                if (badge) badge.style.display = 'none';
+                const saveBtnText = document.getElementById('save-btn-text');
+                if (saveBtnText) saveBtnText.innerText = "기록 저장";
+                const visitDateEl = document.getElementById('visitDate');
+                if (visitDateEl) visitDateEl.value = new Date().toISOString().split('T')[0];
+                showMessage("초기화가 완료되었습니다.");
+            } catch (error) { console.error(error); }
         }
 
         function closeModal() { document.getElementById('history-modal').style.display = 'none'; }
 
         function fillForm(data) {
             if(!data) return;
-            
             document.getElementById('rowId').value = data.row || '';
-            document.getElementById('visitDate').value = data.visitDate || '';
+            document.getElementById('visitDate').value = data.visitDate || ''; 
             document.getElementById('startTime').value = data.startTime || '';
             document.getElementById('endTime').value = data.endTime || '';
             document.getElementById('targetName').value = data.targetName || '';
-            document.getElementById('visitorList').value = data.visitorList || '';
-            document.getElementById('requestor').value = data.requestor || '';
-            
-            // F: 사유, G: 장소 매핑 강제 확인
+            document.getElementById('requestor').value = data.requestor || '';     
+            document.getElementById('visitorList').value = data.visitorList || ''; 
             document.getElementById('reason').value = data.reason || ''; 
-            document.getElementById('location').value = data.location || '';
-            
+            document.getElementById('location').value = data.location || ''; 
             document.getElementById('details').value = data.details || '';
             document.getElementById('followUp').value = data.followUp || '';
-            
             document.getElementById('save-btn-text').innerText = "기존 기록 수정하기";
             closeModal();
-            showMessage("데이터를 성공적으로 불러왔습니다.");
+            showMessage("기록을 불러왔습니다.");
+        }
+
+        function openHistoryList() {
+            if (currentSearchResults.length === 0) return;
+            const listContainer = document.getElementById('history-list');
+            const targetInfo = document.getElementById('modal-target-info');
+            
+            targetInfo.innerText = `${currentSearchResults[0].targetName} 성도님 - 총 ${currentSearchResults.length}회`;
+            listContainer.innerHTML = '';
+
+            const sortedResults = [...currentSearchResults].sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
+
+            sortedResults.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "p-3 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer text-left transition-all group shadow-sm bg-white";
+                card.onclick = () => fillForm(item);
+                
+                // 심방자 정보를 삭제하고 사유와 장소를 더 강조함
+                card.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-slate-900 text-sm group-hover:text-indigo-700">${item.visitDate}</span>
+                        <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-medium">${item.location || '장소 미기재'}</span>
+                    </div>
+                    <div class="text-[11px] text-indigo-600 font-bold mb-1 line-clamp-1">사유: ${item.reason || '일반심방'}</div>
+                    <div class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed opacity-80">${item.details || '상세 내용 없음'}</div>
+                `;
+                listContainer.appendChild(card);
+            });
+
+            document.getElementById('history-modal').style.display = 'flex';
         }
 
         async function search() {
             const name = document.getElementById('search-name').value.trim();
             if(!name) return showMessage("성함을 입력하세요.", "error");
-            
             const btn = document.getElementById('search-btn');
+            const btnText = document.getElementById('search-btn-text');
+            const spinner = document.getElementById('search-spinner');
             btn.disabled = true;
-            btn.innerText = "조회중";
-
+            btnText.innerText = "조회중";
+            spinner.style.display = "block";
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
                 const results = await res.json();
-                
                 currentSearchResults = results || [];
                 const badge = document.getElementById('visit-count-display');
-
                 if(currentSearchResults.length > 0) {
-                    badge.innerHTML = `기록 <strong>${currentSearchResults.length}건</strong> ▼`;
-                    badge.style.display = "block";
-                    fillForm(currentSearchResults[0]);
+                    badge.innerHTML = `<span><strong>${currentSearchResults.length}회 심방</strong></span>`;
+                    badge.style.display = "flex";
+                    const latest = [...currentSearchResults].sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate))[0];
+                    fillForm(latest);
                 } else {
-                    showMessage("검색 결과가 없습니다.", "error");
+                    showMessage("기존 기록을 찾을 수 없습니다.", "error");
                     badge.style.display = "none";
                 }
-            } catch(e) { 
-                showMessage("조회 중 오류 발생", "error"); 
-            } finally {
+            } catch(e) { showMessage("조회 오류 발생", "error"); }
+            finally {
                 btn.disabled = false;
-                btn.innerText = "조회";
+                btnText.innerText = "조회";
+                spinner.style.display = "none";
             }
         }
 
         async function save() {
             const form = document.getElementById('visit-form');
             if(!form.checkValidity()) return form.reportValidity();
-
             const btn = document.getElementById('save-btn');
             const btnText = document.getElementById('save-btn-text');
             const rowId = document.getElementById('rowId').value;
-            
             const payload = {
                 action: rowId ? "update" : "save",
                 row: rowId,
@@ -212,22 +278,17 @@
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
                 targetName: document.getElementById('targetName').value.trim(),
-                visitorList: document.getElementById('visitorList').value.trim(),
-                requestor: document.getElementById('requestor').value.trim(),
-                reason: document.getElementById('reason').value.trim(),
-                location: document.getElementById('location').value.trim(),
+                requestor: document.getElementById('requestor').value.trim(),     
+                visitorList: document.getElementById('visitorList').value.trim(), 
+                reason: document.getElementById('reason').value.trim(),           
+                location: document.getElementById('location').value.trim(),         
                 details: document.getElementById('details').value.trim(),
                 followUp: document.getElementById('followUp').value.trim()
             };
-
             const formData = new URLSearchParams();
-            for (const key in payload) {
-                formData.append(key, payload[key]);
-            }
-
+            for (const key in payload) { formData.append(key, payload[key]); }
             btn.disabled = true;
-            btnText.innerText = "저장 중...";
-
+            btnText.innerText = "처리 중...";
             try {
                 await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -235,48 +296,27 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData.toString()
                 });
-                
                 showMessage("성공적으로 저장되었습니다.");
                 setTimeout(() => {
-                    resetFormOnly();
+                    clearFormOnly(false);
                     btn.disabled = false;
                     btnText.innerText = "기록 저장";
                 }, 1500);
-            } catch(e) { 
-                showMessage("저장 실패", "error"); 
-                btn.disabled = false;
-            }
+            } catch(e) { showMessage("저장 실패", "error"); btn.disabled = false; }
         }
 
-        document.getElementById('search-name').onkeypress = (e) => { if(e.key === 'Enter') search(); };
-        document.getElementById('search-btn').onclick = search;
-        document.getElementById('save-btn').onclick = save;
-        document.getElementById('clear-btn').onclick = () => {
-            if(confirm("모든 입력을 초기화할까요?")) location.reload();
-        };
-        
-        document.getElementById('visit-count-display').onclick = () => {
-            const list = document.getElementById('history-list');
-            list.innerHTML = '';
-            currentSearchResults.forEach(item => {
-                const d = document.createElement('div');
-                d.className = "p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer text-left";
-                d.onclick = () => fillForm(item);
-                d.innerHTML = `
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-slate-800">${item.visitDate}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${item.startTime} ~ ${item.endTime}</span>
-                    </div>
-                    <div class="text-xs text-slate-600 truncate">사유: ${item.reason}</div>
-                `;
-                list.appendChild(d);
-            });
-            document.getElementById('history-modal').style.display = 'flex';
+        window.onload = () => { 
+            const today = new Date().toISOString().split('T')[0];
+            const visitDateEl = document.getElementById('visitDate');
+            if (visitDateEl) visitDateEl.value = today;
+            const searchInput = document.getElementById('search-name');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
+            }
         };
 
-        window.onload = () => {
-            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-        };
+        document.getElementById('search-btn').onclick = search;
+        document.getElementById('save-btn').onclick = save;
     </script>
 </body>
 </html>

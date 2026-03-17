@@ -49,12 +49,12 @@
 
     <div id="status-msg"></div>
 
-    <!-- 심방 이력 모달 -->
+    <!-- 심방 기록 선택 모달 -->
     <div id="history-modal" onclick="closeModal()">
         <div class="modal-content shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <div>
-                    <h3 class="font-bold text-slate-800 text-base">심방 기록 선택</h3>
+                    <h3 id="modal-title" class="font-bold text-slate-800 text-base">심방 기록 선택</h3>
                     <p id="modal-target-info" class="text-xs text-indigo-600 font-semibold">최신순 정렬</p>
                 </div>
                 <button onclick="closeModal()" class="p-1 hover:bg-slate-200 rounded-full text-slate-500">
@@ -72,6 +72,7 @@
         </header>
 
         <main class="form-card overflow-hidden">
+            <!-- 상단 툴바 (검색 및 버튼들) -->
             <div class="p-4 bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <div class="relative w-full md:w-32">
@@ -84,9 +85,10 @@
                         </svg>
                         <span id="search-btn-text">조회</span>
                     </button>
-                    <div id="visit-count-display" onclick="openHistoryList()"></div>
+                    <div id="visit-count-display" onclick="openHistoryList(false)"></div>
                 </div>
                 <div class="flex gap-2 w-full lg:w-auto">
+                    <button type="button" id="date-view-btn" onclick="fetchByDate()" class="btn btn-secondary h-10 flex-grow lg:px-4 text-sm border-indigo-200 text-indigo-600">일자별 조회</button>
                     <button type="button" id="clear-btn" onclick="clearFormOnly()" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
                     <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
@@ -94,6 +96,7 @@
                 </div>
             </div>
 
+            <!-- 입력 폼 -->
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <input type="hidden" id="rowId" value="">
                 
@@ -150,7 +153,7 @@
     </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysutIRCiIpCQVRumCgQlkJkWewywMD84FMP-Q6c6-Y5jV-iaKV51T9-RujoAum9_vXUA/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbfn0nUyvYmRz9kFv4mwKr0AomhHkJxOjyv5QlRfy660EIDVQNKWdVblllQLrUXYuj/exec";
         let currentSearchResults = [];
 
         function showMessage(text, type='success') {
@@ -162,34 +165,21 @@
             setTimeout(() => { m.style.display = 'none'; }, 3000);
         }
 
-        // 초기화 버튼 시 알림 없이 즉시 비우도록 수정
         function clearFormOnly() {
-            try {
-                const form = document.getElementById('visit-form');
-                if (form) form.reset();
-
-                // 모든 필드 명시적 초기화
-                const inputs = document.querySelectorAll('#visit-form input:not([type="date"]):not([type="time"]), #visit-form textarea');
-                inputs.forEach(el => el.value = "");
-                
-                document.getElementById('rowId').value = "";
-                document.getElementById('search-name').value = "";
-                
-                currentSearchResults = [];
-                document.getElementById('visit-count-display').style.display = 'none';
-                document.getElementById('save-btn-text').innerText = "기록 저장";
-                
-                // 오늘 날짜로 재설정
-                document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-                
-                showMessage("모든 내용을 초기화했습니다.");
-            } catch (error) { console.error(error); }
+            document.getElementById('visit-form').reset();
+            const inputs = document.querySelectorAll('#visit-form input:not([type="date"]):not([type="time"]), #visit-form textarea');
+            inputs.forEach(el => el.value = "");
+            document.getElementById('rowId').value = "";
+            document.getElementById('search-name').value = "";
+            document.getElementById('visit-count-display').style.display = 'none';
+            document.getElementById('save-btn-text').innerText = "기록 저장";
+            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+            showMessage("모든 입력란을 초기화했습니다.");
         }
 
         function closeModal() { document.getElementById('history-modal').style.display = 'none'; }
 
         function fillForm(data) {
-            if(!data) return;
             document.getElementById('rowId').value = data.row || '';
             document.getElementById('visitDate').value = data.visitDate || ''; 
             document.getElementById('startTime').value = data.startTime || '';
@@ -203,20 +193,25 @@
             document.getElementById('followUp').value = data.followUp || '';
             document.getElementById('save-btn-text').innerText = "기존 기록 수정하기";
             closeModal();
-            showMessage("기록을 불러왔습니다.");
+            showMessage("선택한 기록을 불러왔습니다.");
         }
 
-        function openHistoryList() {
+        function openHistoryList(isDateView = false) {
             if (currentSearchResults.length === 0) return;
             const listContainer = document.getElementById('history-list');
             const targetInfo = document.getElementById('modal-target-info');
+            const modalTitle = document.getElementById('modal-title');
             
-            targetInfo.innerText = `${currentSearchResults[0].targetName} 성도님 - 총 ${currentSearchResults.length}회`;
+            if (isDateView) {
+                modalTitle.innerText = "일자별 전체 심방 명단";
+                targetInfo.innerText = "최근 날짜순 전체 기록";
+            } else {
+                modalTitle.innerText = "심방 기록 선택";
+                targetInfo.innerText = `${currentSearchResults[0].targetName} 성도님 - 총 ${currentSearchResults.length}회`;
+            }
+
             listContainer.innerHTML = '';
-
-            const sortedResults = [...currentSearchResults].sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
-
-            sortedResults.forEach(item => {
+            currentSearchResults.forEach(item => {
                 const card = document.createElement('div');
                 card.className = "p-3 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer text-left transition-all group shadow-sm bg-white";
                 card.onclick = () => fillForm(item);
@@ -226,23 +221,21 @@
                         <span class="font-bold text-slate-900 text-sm group-hover:text-indigo-700">${item.visitDate}</span>
                         <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-500 font-medium">${item.location || '장소 미기재'}</span>
                     </div>
-                    <div class="text-[11px] text-indigo-600 font-bold mb-1 line-clamp-1">사유: ${item.reason || '일반심방'}</div>
-                    <div class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed opacity-80">${item.details || '상세 내용 없음'}</div>
+                    <div class="text-[11px] text-indigo-600 font-bold mb-1">대상: ${item.targetName} | 사유: ${item.reason || '일반'}</div>
+                    <div class="text-[10px] text-slate-500 line-clamp-1 opacity-80">${item.details}</div>
                 `;
                 listContainer.appendChild(card);
             });
-
             document.getElementById('history-modal').style.display = 'flex';
         }
 
+        // 특정 이름 검색 (기존 로직 유지)
         async function search() {
             const name = document.getElementById('search-name').value.trim();
             if(!name) return showMessage("성함을 입력하세요.", "error");
             const btn = document.getElementById('search-btn');
-            const btnText = document.getElementById('search-btn-text');
             const spinner = document.getElementById('search-spinner');
             btn.disabled = true;
-            btnText.innerText = "조회중";
             spinner.style.display = "block";
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
@@ -252,25 +245,39 @@
                 if(currentSearchResults.length > 0) {
                     badge.innerHTML = `<span><strong>${currentSearchResults.length}회 심방</strong></span>`;
                     badge.style.display = "flex";
-                    const latest = [...currentSearchResults].sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate))[0];
-                    fillForm(latest);
+                    fillForm(currentSearchResults[0]); // 가장 최근 기록 바로 로드
                 } else {
-                    showMessage("기존 기록을 찾을 수 없습니다.", "error");
+                    showMessage("기록을 찾을 수 없습니다.", "error");
                     badge.style.display = "none";
                 }
-            } catch(e) { showMessage("조회 오류 발생", "error"); }
-            finally {
-                btn.disabled = false;
-                btnText.innerText = "조회";
-                spinner.style.display = "none";
-            }
+            } catch(e) { showMessage("조회 오류", "error"); }
+            finally { btn.disabled = false; spinner.style.display = "none"; }
+        }
+
+        // 일자별 전체 조회 (새로운 전체 데이터 로드 로직)
+        async function fetchByDate() {
+            const btn = document.getElementById('date-view-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "로딩 중...";
+            btn.disabled = true;
+            try {
+                // name 파라미터를 아예 비워서 보내면 Code.gs가 전체를 반환합니다.
+                const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=`);
+                const results = await res.json();
+                if (results && results.length > 0) {
+                    currentSearchResults = results;
+                    openHistoryList(true);
+                } else {
+                    showMessage("기록이 하나도 없습니다.", "error");
+                }
+            } catch (e) { showMessage("데이터를 불러오지 못했습니다.", "error"); }
+            finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
         async function save() {
             const form = document.getElementById('visit-form');
             if(!form.checkValidity()) return form.reportValidity();
             const btn = document.getElementById('save-btn');
-            const btnText = document.getElementById('save-btn-text');
             const rowId = document.getElementById('rowId').value;
             const payload = {
                 action: rowId ? "update" : "save",
@@ -289,8 +296,8 @@
             const formData = new URLSearchParams();
             for (const key in payload) { formData.append(key, payload[key]); }
             btn.disabled = true;
-            btnText.innerText = "처리 중...";
             try {
+                // POST 요청 시 Apps Script 보안상 no-cors 모드를 사용합니다.
                 await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -298,26 +305,15 @@
                     body: formData.toString()
                 });
                 showMessage("성공적으로 저장되었습니다.");
-                setTimeout(() => {
-                    clearFormOnly();
-                    btn.disabled = false;
-                    btnText.innerText = "기록 저장";
-                }, 1500);
-            } catch(e) { showMessage("저장 실패", "error"); btn.disabled = false; }
+                setTimeout(clearFormOnly, 1500);
+            } catch(e) { showMessage("저장 실패", "error"); }
+            finally { btn.disabled = false; }
         }
 
         window.onload = () => { 
-            const today = new Date().toISOString().split('T')[0];
-            const visitDateEl = document.getElementById('visitDate');
-            if (visitDateEl) visitDateEl.value = today;
-            const searchInput = document.getElementById('search-name');
-            if (searchInput) {
-                searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
-            }
+            document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('search-name').addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
         };
-
-        document.getElementById('search-btn').onclick = search;
-        document.getElementById('save-btn').onclick = save;
     </script>
 </body>
 </html>

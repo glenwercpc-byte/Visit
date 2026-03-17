@@ -87,7 +87,7 @@
                     <div id="visit-count-display" onclick="openHistoryList()"></div>
                 </div>
                 <div class="flex gap-2 w-full lg:w-auto">
-                    <button type="button" id="clear-btn" onclick="clearFormOnly(true)" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
+                    <button type="button" id="clear-btn" onclick="clearFormOnly()" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
                     <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
                     </button>
@@ -162,25 +162,27 @@
             setTimeout(() => { m.style.display = 'none'; }, 3000);
         }
 
-        function clearFormOnly(confirmNeeded = false) {
-            if (confirmNeeded && !confirm("모든 입력 내용을 지우고 초기 상태로 되돌릴까요?")) return;
+        // 초기화 버튼 시 알림 없이 즉시 비우도록 수정
+        function clearFormOnly() {
             try {
                 const form = document.getElementById('visit-form');
                 if (form) form.reset();
+
+                // 모든 필드 명시적 초기화
                 const inputs = document.querySelectorAll('#visit-form input:not([type="date"]):not([type="time"]), #visit-form textarea');
                 inputs.forEach(el => el.value = "");
-                const rowIdEl = document.getElementById('rowId');
-                if (rowIdEl) rowIdEl.value = "";
-                const searchInput = document.getElementById('search-name');
-                if (searchInput) searchInput.value = "";
+                
+                document.getElementById('rowId').value = "";
+                document.getElementById('search-name').value = "";
+                
                 currentSearchResults = [];
-                const badge = document.getElementById('visit-count-display');
-                if (badge) badge.style.display = 'none';
-                const saveBtnText = document.getElementById('save-btn-text');
-                if (saveBtnText) saveBtnText.innerText = "기록 저장";
-                const visitDateEl = document.getElementById('visitDate');
-                if (visitDateEl) visitDateEl.value = new Date().toISOString().split('T')[0];
-                showMessage("초기화가 완료되었습니다.");
+                document.getElementById('visit-count-display').style.display = 'none';
+                document.getElementById('save-btn-text').innerText = "기록 저장";
+                
+                // 오늘 날짜로 재설정
+                document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+                
+                showMessage("모든 내용을 초기화했습니다.");
             } catch (error) { console.error(error); }
         }
 
@@ -219,7 +221,6 @@
                 card.className = "p-3 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer text-left transition-all group shadow-sm bg-white";
                 card.onclick = () => fillForm(item);
                 
-                // 심방자 정보를 삭제하고 사유와 장소를 더 강조함
                 card.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-bold text-slate-900 text-sm group-hover:text-indigo-700">${item.visitDate}</span>
@@ -298,7 +299,7 @@
                 });
                 showMessage("성공적으로 저장되었습니다.");
                 setTimeout(() => {
-                    clearFormOnly(false);
+                    clearFormOnly();
                     btn.disabled = false;
                     btnText.innerText = "기록 저장";
                 }, 1500);

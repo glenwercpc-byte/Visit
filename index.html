@@ -13,6 +13,7 @@
         .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; gap: 0.4rem; transition: all 0.2s; border: 1px solid transparent; }
         .btn-primary { background-color: #6366f1; color: white; }
+        .btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background-color: #fff; border-color: #94a3b8; color: #334155; }
         .btn-danger { background-color: #fff; border-color: #fca5a5; color: #ef4444; }
         #status-msg { display: none; position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 0.75rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-weight: 700; text-align: center; min-width: 250px; }
@@ -72,7 +73,6 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <!-- 상단 툴바 -->
             <div class="p-4 bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <div class="relative w-full md:w-32">
@@ -90,14 +90,12 @@
                 <div class="flex gap-2 w-full lg:w-auto">
                     <button type="button" id="date-view-btn" onclick="fetchByDate()" class="btn btn-secondary h-10 flex-grow lg:px-4 text-sm border-indigo-200 text-indigo-600">일자별 조회</button>
                     <button type="button" id="clear-btn" onclick="clearFormOnly()" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
-                    <!-- [수정] onclick="save()" 추가 -->
-                    <button type="button" id="save-btn" onclick="save()" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
+                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 입력 폼 -->
             <form id="visit-form" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <input type="hidden" id="rowId" value="">
                 
@@ -154,7 +152,7 @@
     </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjdtn0RRKiuEqJa-TsYBHjupyoEXLPGlsyqFJ0-MoJUNhB7WAATNBQl2Q9kTs7WCetUQ/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyS_1wylxAPfkzZzhSWjV7EfCyiZkDO2ALKMp6E6azoQXWgzIfoscNf_hGwbb8Q_UsXBQ/exec";
         let currentSearchResults = [];
 
         function showMessage(text, type='success') {
@@ -175,7 +173,6 @@
             document.getElementById('visit-count-display').style.display = 'none';
             document.getElementById('save-btn-text').innerText = "기록 저장";
             document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-            showMessage("모든 입력란을 초기화했습니다.");
         }
 
         function closeModal() { document.getElementById('history-modal').style.display = 'none'; }
@@ -272,15 +269,19 @@
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
-        // [수정] save 함수 로직을 script_update.js 제안 사항과 통합
         async function save() {
             const form = document.getElementById('visit-form');
             if(!form.checkValidity()) return form.reportValidity();
             
             const btn = document.getElementById('save-btn');
             const btnText = document.getElementById('save-btn-text');
-            const rowId = document.getElementById('rowId').value;
             
+            // [중요] 클릭 즉시 버튼 비활성화 (중복 클릭 원천 차단)
+            btn.disabled = true;
+            const originalBtnText = btnText.innerText;
+            btnText.innerText = "처리 중... 잠시만 기다려주세요.";
+
+            const rowId = document.getElementById('rowId').value;
             const payload = {
                 action: rowId ? "update" : "save",
                 row: rowId,
@@ -298,13 +299,9 @@
 
             const formData = new URLSearchParams();
             for (const key in payload) { formData.append(key, payload[key]); }
-            
-            btn.disabled = true;
-            const originalBtnText = btnText.innerText;
-            btnText.innerText = "저장 중...";
 
             try {
-                // Apps Script POST 요청
+                // fetch 요청 (Apps Script로 전송)
                 await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -312,15 +309,17 @@
                     body: formData.toString()
                 });
                 
-                showMessage("성공적으로 저장되었습니다.");
-                // 저장 후 폼 초기화 및 버튼 복구
+                showMessage("기록이 성공적으로 전송되었습니다.");
+                
+                // 전송 후 입력 폼 초기화 및 버튼 복구는 시간차를 둠 (안정성 확보)
                 setTimeout(() => {
                     clearFormOnly();
                     btn.disabled = false;
                     btnText.innerText = "기록 저장";
-                }, 1500);
+                }, 2000);
+
             } catch(e) { 
-                showMessage("저장 중 오류가 발생했습니다.", "error"); 
+                showMessage("오류가 발생했습니다. 다시 시도해주세요.", "error"); 
                 btn.disabled = false;
                 btnText.innerText = originalBtnText;
             }
@@ -328,9 +327,18 @@
 
         window.onload = () => { 
             document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('search-name').addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
             
-            // 버튼 클릭 이벤트 명시적 연결 (HTML 내 onclick 미동작 대비)
+            // 검색 엔터키 지원
+            document.getElementById('search-name').addEventListener('keypress', (e) => { 
+                if (e.key === 'Enter') { e.preventDefault(); search(); }
+            });
+
+            // 조회 버튼 클릭
+            document.getElementById('search-btn').addEventListener('click', (e) => {
+                e.preventDefault(); search();
+            });
+
+            // 저장 버튼 클릭 (중복 이벤트 리스너 방지를 위해 정적으로 관리)
             const saveBtn = document.getElementById('save-btn');
             if (saveBtn) {
                 saveBtn.addEventListener('click', (e) => {

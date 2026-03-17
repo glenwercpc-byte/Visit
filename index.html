@@ -72,7 +72,7 @@
         </header>
 
         <main class="form-card overflow-hidden">
-            <!-- 상단 툴바 (검색 및 버튼들) -->
+            <!-- 상단 툴바 -->
             <div class="p-4 bg-white border-b border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-3">
                 <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                     <div class="relative w-full md:w-32">
@@ -90,7 +90,8 @@
                 <div class="flex gap-2 w-full lg:w-auto">
                     <button type="button" id="date-view-btn" onclick="fetchByDate()" class="btn btn-secondary h-10 flex-grow lg:px-4 text-sm border-indigo-200 text-indigo-600">일자별 조회</button>
                     <button type="button" id="clear-btn" onclick="clearFormOnly()" class="btn btn-danger h-10 flex-grow lg:px-4 text-sm">초기화</button>
-                    <button type="button" id="save-btn" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
+                    <!-- [수정] onclick="save()" 추가 -->
+                    <button type="button" id="save-btn" onclick="save()" class="btn btn-primary h-10 px-6 flex-grow lg:px-8 text-sm shadow-lg shadow-indigo-100">
                         <span id="save-btn-text">기록 저장</span>
                     </button>
                 </div>
@@ -141,19 +142,19 @@
                 
                 <div class="md:col-span-2 space-y-1">
                     <label class="form-label">상세내용</label>
-                    <textarea id="details" rows="5" class="input-field text-sm resize-none" required placeholder="심방 대화 기록 및 기도제목"></textarea>
+                    <textarea id="details" rows="6" class="input-field text-sm resize-none" required placeholder="심방 대화 기록 및 기도제목"></textarea>
                 </div>
                 
                 <div class="md:col-span-2 space-y-1">
                     <label class="form-label">향후관리 / 계획</label>
-                    <textarea id="followUp" rows="2" class="input-field text-sm resize-none" placeholder="추후 관리 사항"></textarea>
+                    <textarea id="followUp" rows="3" class="input-field text-sm resize-none" placeholder="추후 관리 사항"></textarea>
                 </div>
             </form>
         </main>
     </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbfn0nUyvYmRz9kFv4mwKr0AomhHkJxOjyv5QlRfy660EIDVQNKWdVblllQLrUXYuj/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjdtn0RRKiuEqJa-TsYBHjupyoEXLPGlsyqFJ0-MoJUNhB7WAATNBQl2Q9kTs7WCetUQ/exec";
         let currentSearchResults = [];
 
         function showMessage(text, type='success') {
@@ -229,7 +230,6 @@
             document.getElementById('history-modal').style.display = 'flex';
         }
 
-        // 특정 이름 검색 (기존 로직 유지)
         async function search() {
             const name = document.getElementById('search-name').value.trim();
             if(!name) return showMessage("성함을 입력하세요.", "error");
@@ -245,7 +245,7 @@
                 if(currentSearchResults.length > 0) {
                     badge.innerHTML = `<span><strong>${currentSearchResults.length}회 심방</strong></span>`;
                     badge.style.display = "flex";
-                    fillForm(currentSearchResults[0]); // 가장 최근 기록 바로 로드
+                    fillForm(currentSearchResults[0]); 
                 } else {
                     showMessage("기록을 찾을 수 없습니다.", "error");
                     badge.style.display = "none";
@@ -254,14 +254,12 @@
             finally { btn.disabled = false; spinner.style.display = "none"; }
         }
 
-        // 일자별 전체 조회 (새로운 전체 데이터 로드 로직)
         async function fetchByDate() {
             const btn = document.getElementById('date-view-btn');
             const originalText = btn.innerText;
             btn.innerText = "로딩 중...";
             btn.disabled = true;
             try {
-                // name 파라미터를 아예 비워서 보내면 Code.gs가 전체를 반환합니다.
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=`);
                 const results = await res.json();
                 if (results && results.length > 0) {
@@ -274,11 +272,15 @@
             finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
+        // [수정] save 함수 로직을 script_update.js 제안 사항과 통합
         async function save() {
             const form = document.getElementById('visit-form');
             if(!form.checkValidity()) return form.reportValidity();
+            
             const btn = document.getElementById('save-btn');
+            const btnText = document.getElementById('save-btn-text');
             const rowId = document.getElementById('rowId').value;
+            
             const payload = {
                 action: rowId ? "update" : "save",
                 row: rowId,
@@ -293,26 +295,49 @@
                 details: document.getElementById('details').value.trim(),
                 followUp: document.getElementById('followUp').value.trim()
             };
+
             const formData = new URLSearchParams();
             for (const key in payload) { formData.append(key, payload[key]); }
+            
             btn.disabled = true;
+            const originalBtnText = btnText.innerText;
+            btnText.innerText = "저장 중...";
+
             try {
-                // POST 요청 시 Apps Script 보안상 no-cors 모드를 사용합니다.
+                // Apps Script POST 요청
                 await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData.toString()
                 });
+                
                 showMessage("성공적으로 저장되었습니다.");
-                setTimeout(clearFormOnly, 1500);
-            } catch(e) { showMessage("저장 실패", "error"); }
-            finally { btn.disabled = false; }
+                // 저장 후 폼 초기화 및 버튼 복구
+                setTimeout(() => {
+                    clearFormOnly();
+                    btn.disabled = false;
+                    btnText.innerText = "기록 저장";
+                }, 1500);
+            } catch(e) { 
+                showMessage("저장 중 오류가 발생했습니다.", "error"); 
+                btn.disabled = false;
+                btnText.innerText = originalBtnText;
+            }
         }
 
         window.onload = () => { 
             document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('search-name').addEventListener('keypress', (e) => { if (e.key === 'Enter') search(); });
+            
+            // 버튼 클릭 이벤트 명시적 연결 (HTML 내 onclick 미동작 대비)
+            const saveBtn = document.getElementById('save-btn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    save();
+                });
+            }
         };
     </script>
 </body>

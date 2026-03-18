@@ -13,7 +13,6 @@
         .input-field:focus { outline: none; border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15); }
         .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; gap: 0.4rem; transition: all 0.2s; border: 1px solid transparent; }
         .btn-primary { background-color: #6366f1; color: white; }
-        .btn-primary:disabled { background-color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background-color: #fff; border-color: #94a3b8; color: #334155; }
         .btn-danger { background-color: #fff; border-color: #fca5a5; color: #ef4444; }
         #status-msg { display: none; position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1000; padding: 0.75rem 1.5rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-weight: 700; text-align: center; min-width: 250px; }
@@ -50,7 +49,6 @@
 
     <div id="status-msg"></div>
 
-    <!-- 심방 기록 선택 모달 -->
     <div id="history-modal" onclick="closeModal()">
         <div class="modal-content shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -200,6 +198,9 @@
             const targetInfo = document.getElementById('modal-target-info');
             const modalTitle = document.getElementById('modal-title');
             
+            // 데이터 정렬: visitDate 기준 내림차순 (A열 최신 일자 순)
+            currentSearchResults.sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
+
             if (isDateView) {
                 modalTitle.innerText = "일자별 전체 심방 명단";
                 targetInfo.innerText = "최근 날짜순 전체 기록";
@@ -227,16 +228,6 @@
             document.getElementById('history-modal').style.display = 'flex';
         }
 
-        // 공통 정렬 로직 (최근 날짜 및 시간순)
-        function sortResults(results) {
-            if (!results || results.length === 0) return results;
-            return results.sort((a, b) => {
-                const dateA = new Date(a.visitDate + 'T' + (a.startTime || '00:00'));
-                const dateB = new Date(b.visitDate + 'T' + (b.startTime || '00:00'));
-                return dateB - dateA;
-            });
-        }
-
         async function search() {
             const name = document.getElementById('search-name').value.trim();
             if(!name) return showMessage("성함을 입력하세요.", "error");
@@ -247,14 +238,13 @@
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=${encodeURIComponent(name)}`);
                 const results = await res.json();
-                
-                // 검색 결과 최신순 정렬
-                currentSearchResults = sortResults(results || []);
-                
+                currentSearchResults = results || [];
                 const badge = document.getElementById('visit-count-display');
                 if(currentSearchResults.length > 0) {
                     badge.innerHTML = `<span><strong>${currentSearchResults.length}회 심방</strong></span>`;
                     badge.style.display = "flex";
+                    // 검색 시에도 최신 기록을 먼저 보여줌
+                    currentSearchResults.sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
                     fillForm(currentSearchResults[0]); 
                 } else {
                     showMessage("기록을 찾을 수 없습니다.", "error");
@@ -272,10 +262,8 @@
             try {
                 const res = await fetch(`${APPS_SCRIPT_URL}?action=search&name=`);
                 const results = await res.json();
-                
                 if (results && results.length > 0) {
-                    // 일자별 전체 데이터 최신순 정렬
-                    currentSearchResults = sortResults(results);
+                    currentSearchResults = results;
                     openHistoryList(true);
                 } else {
                     showMessage("기록이 하나도 없습니다.", "error");
@@ -291,10 +279,9 @@
             const btn = document.getElementById('save-btn');
             const btnText = document.getElementById('save-btn-text');
             
-            // 클릭 즉시 비활성화하여 중복 저장 차단
             btn.disabled = true;
             const originalBtnText = btnText.innerText;
-            btnText.innerText = "처리 중...";
+            btnText.innerText = "처리 중... 잠시만 기다려주세요.";
 
             const rowId = document.getElementById('rowId').value;
             const payload = {
@@ -323,16 +310,14 @@
                     body: formData.toString()
                 });
                 
-                showMessage("기록이 저장되었습니다.");
-                
+                showMessage("기록이 전송되었습니다.");
                 setTimeout(() => {
                     clearFormOnly();
                     btn.disabled = false;
                     btnText.innerText = "기록 저장";
-                }, 2000);
-
+                }, 1500);
             } catch(e) { 
-                showMessage("오류가 발생했습니다.", "error"); 
+                showMessage("오류가 발생했습니다. 다시 시도해주세요.", "error"); 
                 btn.disabled = false;
                 btnText.innerText = originalBtnText;
             }
@@ -340,20 +325,16 @@
 
         window.onload = () => { 
             document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
-            
             document.getElementById('search-name').addEventListener('keypress', (e) => { 
                 if (e.key === 'Enter') { e.preventDefault(); search(); }
             });
-
             document.getElementById('search-btn').addEventListener('click', (e) => {
                 e.preventDefault(); search();
             });
-
             const saveBtn = document.getElementById('save-btn');
             if (saveBtn) {
                 saveBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    save();
+                    e.preventDefault(); save();
                 });
             }
         };

@@ -126,6 +126,7 @@
                     <input type="text" id="visitorList" class="input-field text-sm" required placeholder="참석자 명단">
                 </div>
                 
+                <!-- 수정됨: 사유/목적과 장소 위치 및 ID 확인 -->
                 <div class="space-y-1">
                     <label class="form-label">사유 / 목적</label>
                     <input type="text" id="reason" class="input-field text-sm" placeholder="예: 병문안, 새가족">
@@ -150,7 +151,6 @@
     </div>
 
     <script>
-        // [중요] 배포 후 생성된 새로운 웹 앱 URL을 여기에 붙여넣으세요.
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5upjFVk1wVaVn03frx6EEGyITi7PcvziLOq-XUQ919SbELczF2YKENrYONSjJRXLuNg/exec";
         let currentSearchResults = [];
 
@@ -171,7 +171,6 @@
             document.getElementById('search-name').value = "";
             document.getElementById('visit-count-display').style.display = 'none';
             document.getElementById('save-btn-text').innerText = "기록 저장";
-            // 날짜 보정: 현지 날짜 기준 YYYY-MM-DD
             document.getElementById('visitDate').value = new Date().toLocaleDateString('en-CA');
         }
 
@@ -200,10 +199,9 @@
             const targetInfo = document.getElementById('modal-target-info');
             const modalTitle = document.getElementById('modal-title');
             
-            // 정렬 로직: 날짜 내림차순 (A열 최신순)
             currentSearchResults.sort((a, b) => {
                 if(b.visitDate !== a.visitDate) return b.visitDate.localeCompare(a.visitDate);
-                return b.row - a.row; // 같은 날짜면 행 번호가 큰 것(최신 입력) 우선
+                return b.row - a.row; 
             });
 
             if (isDateView) {
@@ -248,7 +246,6 @@
                 if(currentSearchResults.length > 0) {
                     badge.innerHTML = `<span><strong>${currentSearchResults.length}회 심방</strong></span>`;
                     badge.style.display = "flex";
-                    // 최신순 정렬 후 첫 번째 항목 자동 로드
                     currentSearchResults.sort((a, b) => b.visitDate.localeCompare(a.visitDate));
                     fillForm(currentSearchResults[0]); 
                 } else {
@@ -289,6 +286,7 @@
             btnText.innerText = "처리 중...";
 
             const rowId = document.getElementById('rowId').value;
+            // payload 데이터 추출 순서와 ID를 확인하여 매칭
             const payload = {
                 action: rowId ? "update" : "save",
                 row: rowId,
@@ -308,7 +306,7 @@
             for (const key in payload) { formData.append(key, payload[key]); }
 
             try {
-                const response = await fetch(APPS_SCRIPT_URL, {
+                await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -329,9 +327,7 @@
         }
 
         window.onload = () => { 
-            // 현재 날짜 기본값 설정 (현지 시간대 보정)
             document.getElementById('visitDate').value = new Date().toLocaleDateString('en-CA');
-            
             document.getElementById('search-name').addEventListener('keypress', (e) => { 
                 if (e.key === 'Enter') { e.preventDefault(); search(); }
             });

@@ -178,7 +178,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 /* 모달 */
 .modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(15 23 42 / 0.55); }
-.modal-box { width: 100%; max-width: 520px; max-height: 84vh; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px; overflow: hidden; box-shadow: 0 24px 48px rgb(15 23 42 / 0.25); }
+.modal-box { width: 100%; max-width: 680px; max-height: 84vh; display: flex; flex-direction: column; background: var(--surface); border-radius: 14px; overflow: hidden; box-shadow: 0 24px 48px rgb(15 23 42 / 0.25); }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--line-soft); background: #f8fafc; }
 .modal-head h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ink-strong); }
 .modal-head p { margin: 2px 0 0; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
@@ -202,7 +202,9 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 /* 기간별 명단 */
 .view-toggle { display: inline-flex; border: 1.5px solid var(--line); border-radius: 9px; overflow: hidden; margin-left: auto; }
-.view-toggle button { font: inherit; font-size: 0.8rem; font-weight: 700; border: 0; background: var(--surface); color: var(--muted); padding: 0 12px; height: 35px; cursor: pointer; }
+.view-toggle { flex-shrink: 0; }
+.view-toggle button { font: inherit; font-size: 0.8rem; font-weight: 700; border: 0; background: var(--surface); color: var(--muted); padding: 0 14px; height: 38px; min-width: 64px; cursor: pointer; white-space: nowrap; }
+.view-toggle button + button { border-left: 1.5px solid var(--line); }
 .view-toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .person { border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); }
 .person[open] { border-color: var(--accent-line); }
@@ -269,8 +271,8 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       <input type="date" id="range-to" class="field" aria-label="종료일">
       <button type="button" id="range-go" class="btn btn-primary" onclick="runRange()">조회</button>
       <div class="view-toggle" role="group" aria-label="보기 방식">
-        <button type="button" id="view-date" aria-pressed="true" onclick="setRangeView('date')">최신 날짜순</button>
-        <button type="button" id="view-roster" aria-pressed="false" onclick="setRangeView('roster')">이름별 명단</button>
+        <button type="button" id="view-date" aria-pressed="true" onclick="setRangeView('date')" title="최신 날짜순">Date</button>
+        <button type="button" id="view-roster" aria-pressed="false" onclick="setRangeView('roster')" title="이름별 명단">Name</button>
       </div>
     </div>
     <div id="modal-list" class="modal-list"></div>

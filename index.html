@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CCPC 교인 심방 일지</title>
+<title>시카고 언약장로교회 교인 심방 일지</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root {
@@ -241,6 +241,8 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
   .c2, .c3, .c4 { grid-column: 1 / -1; }
   .actions { width: 100%; }
   .range { flex-wrap: wrap; }
+  .view-toggle { width: 100%; margin-left: 0; }
+  .view-toggle button { flex: 1; }
   .range .field { flex: 1 1 130px; }
 }
 </style>
@@ -267,8 +269,8 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       <input type="date" id="range-to" class="field" aria-label="종료일">
       <button type="button" id="range-go" class="btn btn-primary" onclick="runRange()">조회</button>
       <div class="view-toggle" role="group" aria-label="보기 방식">
-        <button type="button" id="view-roster" aria-pressed="true" onclick="setRangeView('roster')">명단</button>
-        <button type="button" id="view-date" aria-pressed="false" onclick="setRangeView('date')">날짜순</button>
+        <button type="button" id="view-date" aria-pressed="true" onclick="setRangeView('date')">최신 날짜순</button>
+        <button type="button" id="view-roster" aria-pressed="false" onclick="setRangeView('roster')">이름별 명단</button>
       </div>
     </div>
     <div id="modal-list" class="modal-list"></div>
@@ -390,7 +392,7 @@ const state = {
   suggestIndex: -1,
   modalRecords: [],
   rangeRecords: [],
-  rangeView: 'roster'
+  rangeView: (() => { try { return localStorage.getItem('visitRangeView') === 'roster' ? 'roster' : 'date'; } catch (e) { return 'date'; } })()
 };
 
 const $ = id => document.getElementById(id);
@@ -800,6 +802,8 @@ function openRange() {
   $('modal-title').textContent = '기간별 심방 명단';
   $('modal-sub').textContent = '기간을 정하고 조회하세요';
   $('range-bar').hidden = false;
+  $('view-date').setAttribute('aria-pressed', String(state.rangeView === 'date'));
+  $('view-roster').setAttribute('aria-pressed', String(state.rangeView === 'roster'));
   if (!$('range-from').value) $('range-from').value = monthsAgo(3);
   if (!$('range-to').value) $('range-to').value = today();
   $('modal-list').innerHTML = '';
@@ -809,6 +813,7 @@ function openRange() {
 
 function setRangeView(view) {
   state.rangeView = view;
+  try { localStorage.setItem('visitRangeView', view); } catch (e) { /* 저장 안 되어도 동작 */ }
   $('view-roster').setAttribute('aria-pressed', String(view === 'roster'));
   $('view-date').setAttribute('aria-pressed', String(view === 'date'));
   renderRange();
@@ -845,7 +850,10 @@ function recButton(r, i, showWho) {
 function renderRange() {
   const records = state.rangeRecords;
   if ($('range-bar').hidden) return;
-  if (state.rangeView === 'date' || !records.length) { renderRecordList(records, true); return; }
+  if (state.rangeView === 'date' || !records.length) {
+    renderRecordList(records, true);
+    return;
+  }
 
   state.modalRecords = records;
   const groups = groupByPerson(records);

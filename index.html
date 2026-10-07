@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>시카고 언약장로교회 교인 심방 일지</title>
+<title>CCPC 교인 심방 일지</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root {
@@ -52,6 +52,21 @@ body {
 .sync.online .dot { background: var(--ok); }
 .sync.offline { color: var(--danger); border-color: var(--danger-line); cursor: pointer; }
 .sync.offline .dot { background: var(--danger); }
+.sync.loading { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.sync.loading .dot { background: var(--accent); }
+/* 글씨가 왼쪽에서 오른쪽으로 흘러가는 애니메이션 */
+.sync-track { position: relative; display: inline-block; overflow: hidden; vertical-align: bottom; }
+.sync.loading .sync-track { width: 150px; height: 1.4em; }
+.sync.loading #sync-text { position: absolute; left: 0; top: 0; width: 100%; text-align: center; white-space: nowrap; animation: slide-lr 2.4s linear infinite; }
+@keyframes slide-lr { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .sync.loading #sync-text { animation: none; } }
+.head-tools { display: flex; gap: 6px; align-items: center; }
+.diag { margin: 0; font-size: 0.82rem; line-height: 1.6; }
+.diag dt { font-weight: 800; color: var(--muted); margin-top: 8px; }
+.diag dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-all; }
+.diag .bad { color: var(--danger); font-weight: 700; }
+.diag .good { color: var(--ok); font-weight: 700; }
+.history-btn.error { background: #fef2f2; border-color: var(--danger-line); color: var(--danger); cursor: pointer; }
 
 /* 카드 */
 .card { background: var(--surface); border-radius: 14px; box-shadow: 0 1px 3px rgb(15 23 42 / 0.08); }
@@ -266,9 +281,12 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       <h1>교인 심방 기록</h1>
       <p>시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
     </div>
-    <button type="button" id="sync" class="sync" onclick="if (this.classList.contains('offline')) loadMembers();">
-      <span class="dot"></span><span id="sync-text">교인명부 불러오는 중</span>
-    </button>
+    <div class="head-tools">
+      <button type="button" id="sync" class="sync loading" onclick="if (this.classList.contains('offline')) loadMembers();">
+        <span class="dot"></span><span class="sync-track"><span id="sync-text">교인명부 불러오는 중</span></span>
+      </button>
+      <button type="button" class="sync" onclick="runDiagnosis()" title="심방 기록 시트 연결 상태 확인">연결 점검</button>
+    </div>
   </header>
 
   <main class="card">
@@ -364,6 +382,7 @@ const state = {
   member: null,        // 선택된 교인 (명부 레코드). 명부에 없는 분이면 null
   history: [],         // 선택된 대상자의 심방 기록
   historyLoading: false,
+  historyError: '',
   editing: null,       // 수정 중인 기록. 새 기록이면 null
   dirty: false,
   saving: false,
@@ -442,6 +461,24 @@ async function getJSON(url, timeoutMs = 20000) {
   }
 }
 
+// 심방 기록 API 호출. 응답 형식으로 서버 버전 문제를 구분해서 알려 줌
+async function visitApi(params) {
+  const qs = new URLSearchParams({ ...params, t: Date.now() });
+  let data;
+  try {
+    data = await getJSON(`${VISIT_API}?${qs}`);
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error('서버 응답이 없습니다. 잠시 후 다시 시도하세요.');
+    if (e instanceof SyntaxError) throw new Error('서버가 JSON이 아닌 응답을 보냈습니다. Apps Script 배포 권한(모든 사용자)과 코드 오류를 확인하세요.');
+    throw new Error(`서버에 연결하지 못했습니다 (${e.message}).`);
+  }
+  if (Array.isArray(data)) {
+    throw new Error('Apps Script가 아직 이전 버전으로 배포되어 있습니다. 배포 관리 > 수정 > 새 버전으로 다시 배포하세요.');
+  }
+  if (!data || !data.success) throw new Error((data && data.message) || '알 수 없는 오류');
+  return data;
+}
+
 function confirmDiscard() {
   return !state.dirty || confirm('작성 중인 내용이 저장되지 않았습니다. 버리고 계속할까요?');
 }
@@ -455,7 +492,7 @@ function setSync(status, text) {
 }
 
 async function loadMembers(retry = 0) {
-  setSync('', '교인명부 불러오는 중');
+  setSync('loading', '교인명부 불러오는 중');
   try {
     const data = await getJSON(`${MEMBER_API}?t=${Date.now()}`, 15000);
     state.members = (Array.isArray(data) ? data : []).filter(m => m && String(m.name || '').trim());
@@ -593,6 +630,8 @@ function renderMemberPanel() {
 
   if (state.historyLoading) {
     html += `<button type="button" class="history-btn" disabled><span class="spinner"></span>기록 확인 중</button>`;
+  } else if (state.historyError) {
+    html += `<button type="button" class="history-btn error" onclick="runDiagnosis()" title="${esc(state.historyError)}">기록 조회 오류 (점검하기)</button>`;
   } else if (state.history.length) {
     html += `<button type="button" class="history-btn" onclick="openHistory()">지난 심방 ${state.history.length}회 보기</button>`;
   } else {
@@ -623,17 +662,17 @@ async function loadHistory() {
   const name = $('targetName').value.trim();
   if (!name) return;
   state.historyLoading = true;
+  state.historyError = '';
   state.history = [];
   renderMemberPanel();
   try {
-    const params = new URLSearchParams({ action: 'search', memberId: $('memberId').value, name, t: Date.now() });
-    const data = await getJSON(`${VISIT_API}?${params}`);
-    if (!data.success) throw new Error(data.message);
+    const data = await visitApi({ action: 'search', memberId: $('memberId').value, name });
     // 응답이 늦게 와서 그 사이 다른 대상자를 선택한 경우 무시
     if ($('targetName').value.trim() !== name) return;
     state.history = sortRecords(data.records || []);
   } catch (e) {
-    toast(`지난 기록을 불러오지 못했습니다: ${e.message}`, 'error');
+    state.historyError = e.message;
+    toast(`지난 기록을 불러오지 못했습니다: ${e.message}`, 'error', 6000);
   } finally {
     state.historyLoading = false;
     renderMemberPanel();
@@ -852,9 +891,7 @@ async function runRange() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>';
   try {
-    const params = new URLSearchParams({ action: 'list', from, to, t: Date.now() });
-    const data = await getJSON(`${VISIT_API}?${params}`);
-    if (!data.success) throw new Error(data.message);
+    const data = await visitApi({ action: 'list', from, to });
     const records = sortRecords(data.records || []);
     state.rangeRecords = records;
     const people = groupByPerson(records).length;
@@ -866,6 +903,37 @@ async function runRange() {
     btn.disabled = false;
     btn.textContent = '조회';
   }
+}
+
+// ───────── 연결 점검 ─────────
+async function runDiagnosis() {
+  $('modal-title').textContent = '연결 점검';
+  $('modal-sub').textContent = '심방 기록 시트를 어떻게 읽고 있는지 확인합니다';
+  $('range-bar').hidden = true;
+  $('modal-list').innerHTML = '<div class="modal-empty"><span class="spinner" style="display:inline-block"></span> 확인 중</div>';
+  openModal();
+
+  let html = '<dl class="diag">';
+  html += `<dt>교인명부</dt><dd>${state.members.length ? `<span class="good">연결됨</span> (${state.members.length}명)` : '<span class="bad">불러오지 못함</span>'}</dd>`;
+  try {
+    const d = await visitApi({ action: 'diag' });
+    html += `<dt>심방 기록 서버</dt><dd><span class="good">연결됨</span> (버전 ${esc(d.version)})</dd>`;
+    html += `<dt>사용 중인 시트</dt><dd>${esc(d.sheet)} (전체 시트: ${esc((d.sheets || []).join(', '))})</dd>`;
+    html += `<dt>1행 헤더</dt><dd>${esc((d.headers || []).join(' | '))}</dd>`;
+    html += `<dt>열 연결</dt><dd>${esc((d.columns || []).join('\n'))}</dd>`;
+    html += `<dt>읽은 기록</dt><dd>${d.count ? `<span class="good">${d.count}건</span>` : '<span class="bad">0건</span>'}</dd>`;
+    if (d.samples && d.samples.length) {
+      html += `<dt>최근 기록 (날짜 | 시간 | 대상자 | 이름 인식)</dt><dd>${esc(d.samples.join('\n'))}</dd>`;
+    }
+    if ($('targetName').value.trim()) {
+      const s = await visitApi({ action: 'search', memberId: $('memberId').value, name: $('targetName').value.trim() });
+      html += `<dt>"${esc($('targetName').value.trim())}" 검색 결과</dt><dd>${s.records.length}건</dd>`;
+    }
+  } catch (e) {
+    html += `<dt>심방 기록 서버</dt><dd class="bad">${esc(e.message)}</dd>`;
+  }
+  html += '</dl>';
+  $('modal-list').innerHTML = html;
 }
 
 // ───────── 저장 ─────────

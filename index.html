@@ -41,32 +41,13 @@ body {
 .top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
 .top h1 { margin: 0; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; color: var(--ink-strong); }
 .top p { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
-.sync {
+.chip {
   display: inline-flex; align-items: center; gap: 6px;
   font: inherit; font-size: 0.75rem; font-weight: 700;
   padding: 5px 11px; border-radius: 999px;
-  border: 1px solid var(--line-soft); background: var(--surface); color: var(--muted);
-  cursor: default;
+  border: 1px solid var(--line-soft); background: var(--surface); color: var(--muted); cursor: pointer;
 }
-.sync .dot { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; }
-.sync.online .dot { background: var(--ok); }
-.sync.offline { color: var(--danger); border-color: var(--danger-line); cursor: pointer; }
-.sync.offline .dot { background: var(--danger); }
-.sync.loading { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
-.sync.loading .dot { background: var(--accent); }
-/* 글씨가 왼쪽에서 오른쪽으로 흘러가는 애니메이션 */
-.sync-track { position: relative; display: inline-block; overflow: hidden; vertical-align: bottom; }
-.sync.loading .sync-track { width: 150px; height: 1.4em; }
-.sync.loading #sync-text { position: absolute; left: 0; top: 0; width: 100%; text-align: center; white-space: nowrap; animation: slide-lr 2.4s linear infinite; }
-@keyframes slide-lr { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .sync.loading #sync-text { animation: none; } }
-.head-tools { display: flex; gap: 6px; align-items: center; }
-.diag { margin: 0; font-size: 0.82rem; line-height: 1.6; }
-.diag dt { font-weight: 800; color: var(--muted); margin-top: 8px; }
-.diag dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-all; }
-.diag .bad { color: var(--danger); font-weight: 700; }
-.diag .good { color: var(--ok); font-weight: 700; }
-.history-btn.error { background: #fef2f2; border-color: var(--danger-line); color: var(--danger); cursor: pointer; }
+.chip:hover { border-color: var(--line); color: var(--ink); }
 
 /* 카드 */
 .card { background: var(--surface); border-radius: 14px; box-shadow: 0 1px 3px rgb(15 23 42 / 0.08); }
@@ -79,8 +60,8 @@ body {
   transition: border-color .15s, box-shadow .15s;
 }
 textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.6; }
+select.field { padding-right: 32px; }
 .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgb(79 70 229 / 0.15); }
-.field[readonly] { background: #f8fafc; color: var(--ink-strong); font-weight: 700; cursor: default; }
 
 /* 버튼 */
 .btn {
@@ -90,7 +71,7 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
   border-radius: 9px; border: 1.5px solid transparent; cursor: pointer;
   white-space: nowrap; transition: background .15s, border-color .15s;
 }
-.btn:focus-visible, .sync:focus-visible, .icon-btn:focus-visible, .rec:focus-visible, .suggest-item:focus-visible {
+.btn:focus-visible, .chip:focus-visible, .icon-btn:focus-visible, .rec:focus-visible, .view-toggle button:focus-visible {
   outline: 3px solid var(--accent-line); outline-offset: 2px;
 }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
@@ -105,55 +86,19 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 
 /* 툴바 */
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--line-soft); }
-.search { position: relative; flex: 1 1 280px; }
+.search { position: relative; flex: 1 1 280px; display: flex; gap: 8px; }
 .search .field { padding-left: 38px; }
 .search > svg { position: absolute; left: 12px; top: 13px; width: 16px; height: 16px; color: #94a3b8; pointer-events: none; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .actions .btn { flex: 1 1 auto; }
 #save-btn { min-width: 128px; }
 
-/* 자동완성 */
-.suggest {
-  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 50;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 0.14);
-  max-height: 340px; overflow-y: auto; padding: 4px;
-}
-.suggest-item {
-  display: flex; align-items: baseline; gap: 8px; width: 100%;
-  padding: 9px 10px; border: 0; border-radius: 7px; background: transparent;
-  font: inherit; text-align: left; cursor: pointer; color: var(--ink);
-}
-.suggest-item.active, .suggest-item:hover { background: var(--accent-soft); }
-.suggest-item .nm { font-weight: 800; color: var(--ink-strong); }
-.suggest-item .meta { font-size: 0.8rem; color: var(--muted); }
-.suggest-item .gone { font-size: 0.72rem; font-weight: 700; color: var(--danger); }
-.suggest-item.free .nm { font-weight: 600; color: var(--accent); }
-.suggest-empty { padding: 10px; font-size: 0.85rem; color: var(--muted); }
-
-/* 교인 정보 패널 */
-.member { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); background: #fafbff; }
-.member-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
-.member-name { font-size: 1.25rem; font-weight: 800; color: var(--ink-strong); letter-spacing: -0.01em; }
-.member-name small { font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-left: 6px; }
-.member-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; background: #fee2e2; color: var(--danger); vertical-align: 3px; }
-.member-facts { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 6px; font-size: 0.88rem; }
-.member-facts span { color: var(--muted); }
-.member-facts b { font-weight: 700; color: var(--ink); }
-.member-facts a { color: var(--accent); font-weight: 700; text-decoration: none; }
-.history-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 999px;
-  font: inherit; font-size: 0.82rem; font-weight: 800;
-  background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent);
-  cursor: pointer;
-}
-.history-btn:disabled { cursor: default; background: #f1f5f9; border-color: var(--line-soft); color: var(--muted); }
-.member-notes { margin-top: 10px; }
-.member-notes summary { font-size: 0.82rem; font-weight: 700; color: var(--accent); cursor: pointer; }
-.member-notes dl { margin: 8px 0 0; display: grid; gap: 8px; }
-.member-notes dt { font-size: 0.78rem; font-weight: 800; color: var(--muted); }
-.member-notes dd { margin: 2px 0 0; white-space: pre-wrap; font-size: 0.88rem; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 10px; }
+/* 검색 결과 줄 */
+.found { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line-soft); background: #fafbff; font-size: 0.9rem; }
+.found strong { color: var(--ink-strong); font-size: 1.05rem; }
+.found .muted { color: var(--muted); }
+.found .err { color: var(--danger); font-weight: 700; }
+.found-actions { display: flex; gap: 6px; }
 
 /* 작성/수정 상태 표시줄 */
 .mode { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; font-size: 0.88rem; border-bottom: 1px solid var(--line-soft); }
@@ -161,7 +106,6 @@ textarea.field { height: auto; padding: 10px 12px; resize: vertical; line-height
 .mode.new strong { color: var(--ink-strong); }
 .mode.edit { background: var(--edit-soft); border-bottom-color: var(--edit-line); color: var(--edit); border-left: 4px solid #f59e0b; }
 .mode.edit strong { color: #78350f; }
-.mode .note { display: block; font-size: 0.8rem; margin-top: 2px; }
 
 /* 폼 */
 form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 18px; }
@@ -173,8 +117,6 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .lbl .req { color: var(--danger); margin-left: 2px; }
 .time-row { display: flex; align-items: center; gap: 8px; }
 .time-row span { color: #94a3b8; font-weight: 700; }
-.with-btn { display: flex; gap: 8px; }
-.hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 
 /* 모달 */
 .modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgb(15 23 42 / 0.55); }
@@ -182,9 +124,14 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 16px; border-bottom: 1px solid var(--line-soft); background: #f8fafc; }
 .modal-head h3 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--ink-strong); }
 .modal-head p { margin: 2px 0 0; font-size: 0.8rem; color: var(--accent); font-weight: 600; }
-.range { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); }
-.range .field { height: 38px; font-size: 0.88rem; }
-.range .btn { height: 38px; }
+.range { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); }
+.range label { font-size: 0.85rem; font-weight: 800; color: #334155; }
+.range select { width: 130px; height: 38px; font-size: 0.9rem; }
+.view-toggle { display: inline-flex; flex-shrink: 0; border: 1.5px solid var(--line); border-radius: 9px; overflow: hidden; margin-left: auto; }
+.view-toggle button { font: inherit; font-size: 0.85rem; font-weight: 700; border: 0; background: var(--surface); color: var(--muted); padding: 0 16px; height: 38px; min-width: 72px; cursor: pointer; white-space: nowrap; }
+.view-toggle button + button { border-left: 1.5px solid var(--line); }
+.view-toggle button:hover { background: #f8fafc; color: var(--ink); }
+.view-toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 .modal-list { overflow-y: auto; padding: 10px; display: grid; gap: 8px; }
 .modal-empty { padding: 28px 12px; text-align: center; color: var(--muted); font-size: 0.9rem; }
 .rec {
@@ -197,28 +144,28 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .rec-date { font-weight: 800; color: var(--ink-strong); font-size: 0.92rem; }
 .rec-loc { font-size: 0.75rem; color: var(--muted); text-align: right; }
 .rec-who { font-size: 0.8rem; font-weight: 700; color: var(--accent); margin: 2px 0 3px; }
-.rec-who .unlinked { color: var(--edit); font-weight: 700; }
 .rec-body { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 기간별 명단 */
-.view-toggle { display: inline-flex; border: 1.5px solid var(--line); border-radius: 9px; overflow: hidden; margin-left: auto; }
-.view-toggle { flex-shrink: 0; }
-.view-toggle button { font: inherit; font-size: 0.8rem; font-weight: 700; border: 0; background: var(--surface); color: var(--muted); padding: 0 14px; height: 38px; min-width: 64px; cursor: pointer; white-space: nowrap; }
-.view-toggle button + button { border-left: 1.5px solid var(--line); }
-.view-toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+/* 이름별 명단 */
 .person { border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); }
 .person[open] { border-color: var(--accent-line); }
 .person summary { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; cursor: pointer; list-style: none; }
 .person summary::-webkit-details-marker { display: none; }
 .person summary::before { content: '▸'; color: #94a3b8; font-size: 0.8rem; width: 10px; }
 .person[open] summary::before { content: '▾'; }
-.p-name { font-weight: 800; color: var(--ink-strong); }
-.p-meta { font-size: 0.78rem; color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-name { font-weight: 800; color: var(--ink-strong); flex: 1; }
 .p-count { font-size: 0.78rem; font-weight: 800; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 1px 9px; }
 .p-last { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .person-recs { display: grid; gap: 6px; padding: 0 10px 10px; }
 .person-recs .rec { padding: 8px 10px; }
-.roster-actions { display: flex; justify-content: flex-end; }
+.list-actions { display: flex; justify-content: flex-end; }
+
+/* 연결 점검 */
+.diag { margin: 0; font-size: 0.82rem; line-height: 1.6; padding: 4px 6px; }
+.diag dt { font-weight: 800; color: var(--muted); margin-top: 8px; }
+.diag dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-all; }
+.diag .bad { color: var(--danger); font-weight: 700; }
+.diag .good { color: var(--ok); font-weight: 700; }
 
 /* 알림 */
 #toast {
@@ -231,13 +178,10 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 #toast.error { background: var(--danger); }
 #toast.info { background: var(--ink); }
 
-.spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } * { transition: none !important; } }
 
-@media (min-width: 681px) and (max-width: 860px) {
-  .with-btn .btn { padding: 0 10px; font-size: 0.8rem; }
-}
 @media (max-width: 680px) {
   form { grid-template-columns: 1fr; padding: 16px 14px; }
   .c2, .c3, .c4 { grid-column: 1 / -1; }
@@ -245,7 +189,6 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
   .range { flex-wrap: wrap; }
   .view-toggle { width: 100%; margin-left: 0; }
   .view-toggle button { flex: 1; }
-  .range .field { flex: 1 1 130px; }
 }
 </style>
 </head>
@@ -253,7 +196,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 <div id="toast" role="status" aria-live="polite" hidden></div>
 
-<!-- 기록 목록 모달 (교인별 / 기간별 공용) -->
+<!-- 기록 목록 모달 (이름 검색 / 심방 기록 조회 / 연결 점검 공용) -->
 <div id="modal" class="modal" hidden>
   <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-head">
@@ -266,13 +209,11 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       </button>
     </div>
     <div id="range-bar" class="range" hidden>
-      <input type="date" id="range-from" class="field" aria-label="시작일">
-      <span>~</span>
-      <input type="date" id="range-to" class="field" aria-label="종료일">
-      <button type="button" id="range-go" class="btn btn-primary" onclick="runRange()">조회</button>
-      <div class="view-toggle" role="group" aria-label="보기 방식">
-        <button type="button" id="view-date" aria-pressed="true" onclick="setRangeView('date')" title="최신 날짜순">Date</button>
-        <button type="button" id="view-roster" aria-pressed="false" onclick="setRangeView('roster')" title="이름별 명단">Name</button>
+      <label for="range-year">연도</label>
+      <select id="range-year" class="field"></select>
+      <div class="view-toggle" role="group" aria-label="조회 방식">
+        <button type="button" id="view-date" aria-pressed="false" onclick="runRange('date')" title="최신 날짜순으로 조회">Date</button>
+        <button type="button" id="view-name" aria-pressed="false" onclick="runRange('name')" title="이름별 명단으로 조회">Name</button>
       </div>
     </div>
     <div id="modal-list" class="modal-list"></div>
@@ -285,36 +226,29 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       <h1>교인 심방 기록</h1>
       <p>시카고 언약장로교회 | Chicago Covenant Presbyterian Church</p>
     </div>
-    <div class="head-tools">
-      <button type="button" id="sync" class="sync loading" onclick="if (this.classList.contains('offline')) loadMembers();">
-        <span class="dot"></span><span class="sync-track"><span id="sync-text">교인명부 불러오는 중</span></span>
-      </button>
-      <button type="button" class="sync" onclick="runDiagnosis()" title="심방 기록 시트 연결 상태 확인">연결 점검</button>
-    </div>
+    <button type="button" class="chip" onclick="runDiagnosis()" title="심방 기록 시트 연결 상태 확인">연결 점검</button>
   </header>
 
   <main class="card">
     <div class="toolbar">
       <div class="search">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="member-search" class="field" placeholder="이름, 영문 이름, 교인번호로 검색"
-               autocomplete="off" role="combobox" aria-expanded="false" aria-controls="suggest" aria-autocomplete="list">
-        <div id="suggest" class="suggest" role="listbox" hidden></div>
+        <input type="text" id="search-name" class="field" placeholder="심방 대상자 이름으로 검색" list="name-list" autocomplete="off">
+        <button type="button" id="search-btn" class="btn btn-ghost" onclick="searchByName()">검색</button>
       </div>
       <div class="actions">
-        <button type="button" class="btn btn-ghost" onclick="openRange()">기간별 심방 명단</button>
+        <button type="button" class="btn btn-ghost" onclick="openRange()">심방 기록 조회</button>
         <button type="button" class="btn btn-danger" onclick="resetAll()">초기화</button>
         <button type="button" id="save-btn" class="btn btn-primary" onclick="save()">기록 저장</button>
       </div>
     </div>
+    <datalist id="name-list"></datalist>
 
-    <section id="member-panel" class="member" hidden aria-live="polite"></section>
+    <div id="found" class="found" hidden aria-live="polite"></div>
 
     <div id="mode-bar" class="mode new"></div>
 
     <form id="visit-form" novalidate autocomplete="off">
-      <input type="hidden" id="memberId">
-
       <div class="c3">
         <label class="lbl" for="visitDate">심방날짜<span class="req">*</span></label>
         <input type="date" id="visitDate" class="field" required>
@@ -331,7 +265,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
       <div class="c2">
         <label class="lbl" for="targetName">심방 대상자<span class="req">*</span></label>
-        <input type="text" id="targetName" class="field" readonly placeholder="검색창에서 선택" tabindex="-1">
+        <input type="text" id="targetName" class="field" required list="name-list" placeholder="예: 주동린 집사">
       </div>
 
       <div class="c2">
@@ -355,10 +289,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
       <div class="c4">
         <label class="lbl" for="location">심방 장소</label>
-        <div class="with-btn">
-          <input type="text" id="location" class="field" placeholder="심방 장소">
-          <button type="button" id="use-address" class="btn btn-ghost" onclick="useMemberAddress()" hidden>교인 주소 넣기</button>
-        </div>
+        <input type="text" id="location" class="field" placeholder="심방 장소">
       </div>
 
       <div class="full">
@@ -376,25 +307,18 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 <script>
 // ───────── 설정 ─────────
-const VISIT_API  = "https://script.google.com/macros/s/AKfycbxa3gpajiCSgzHk_-wv8vkYpzqWn9ZkmN57U4t4m_J1q52fsz1KVlQU0w2hCMJOFA_1HQ/exec";
-const MEMBER_API = "https://script.google.com/macros/s/AKfycbx-N1Y8NaNVu1jiWMxIKQ7xoAQu_65_BKBrT9kZcgiBEN2vsJ52PBTVSVnzkNKQBN0Azw/exec";
+const VISIT_API = "https://script.google.com/macros/s/AKfycbxa3gpajiCSgzHk_-wv8vkYpzqWn9ZkmN57U4t4m_J1q52fsz1KVlQU0w2hCMJOFA_1HQ/exec";
 const FIELDS = ['visitDate', 'startTime', 'endTime', 'targetName', 'visitorList', 'requestor', 'reason', 'location', 'details', 'followUp'];
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 const state = {
-  members: [],
-  member: null,        // 선택된 교인 (명부 레코드). 명부에 없는 분이면 null
-  history: [],         // 선택된 대상자의 심방 기록
-  historyLoading: false,
-  historyError: '',
-  editing: null,       // 수정 중인 기록. 새 기록이면 null
+  found: null,          // { name, records, loading, error }
+  editing: null,        // 수정 중인 기록. 새 기록이면 null
   dirty: false,
   saving: false,
-  suggestions: [],
-  suggestIndex: -1,
-  modalRecords: [],
-  rangeRecords: [],
-  rangeView: (() => { try { return localStorage.getItem('visitRangeView') === 'roster' ? 'roster' : 'date'; } catch (e) { return 'date'; } })()
+  modalRecords: [],     // 모달 목록의 기록 (클릭 시 index로 찾음)
+  range: { year: '', records: [], view: '' },
+  years: []
 };
 
 const $ = id => document.getElementById(id);
@@ -404,9 +328,7 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 function pad(n) { return String(n).padStart(2, '0'); }
-function dateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
-function today() { return dateStr(new Date()); }
-function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return dateStr(d); }
+function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
 function weekday(ds) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ds || '');
   return m ? WEEKDAYS[new Date(+m[1], +m[2] - 1, +m[3]).getDay()] : '';
@@ -420,28 +342,15 @@ function sortRecords(list) {
     `${b.visitDate || ''} ${b.startTime || ''}`.localeCompare(`${a.visitDate || ''} ${a.startTime || ''}`));
 }
 
-// 교인명부의 샘터 값이 날짜로 바뀐 경우(2026-02-22T...) 원래 "2-22" 형식으로 되돌림
-function cellGroupText(v) {
-  const s = String(v ?? '').trim();
-  const m = s.match(/^\d{4}-(\d{2})-(\d{2})T/);
-  return m ? `${parseInt(m[1], 10)}-${m[2]}` : s;
-}
-// "주동린 집사", "주동린 집사 가정", "김OO 권사, 주동린 집사" → 사람별 이름 (직분·공백 제거)
+// "주동린 집사", "주동린 집사 가정", "김OO 권사, 주동린 집사" → 사람별 이름 (직분·괄호 메모·공백 제거)
 const TITLE_RE = /(안수집사|시무장로|은퇴장로|원로장로|협동장로|은퇴권사|명예권사|전도사|집사님|권사님|장로님|목사님|집사|권사|장로|목사|사모|성도|권찰|청년|형제|자매|교우|가정|댁|님)+$/;
 function personNames(text) {
   return String(text || '')
+    .replace(/\([^)]*\)|\[[^\]]*\]/g, ' ')
     .split(/[,，/·&+\n]|\s및\s|\s와\s|\s과\s/)
     .map(p => p.replace(/\s+/g, '').replace(TITLE_RE, ''))
     .filter(Boolean);
 }
-// 3글자 이상 이름은 앞부분 일치, 2글자 이름은 정확히 일치
-function nameMatches(targetText, name) {
-  const n = String(name || '').replace(/\s+/g, '');
-  if (!n) return false;
-  return personNames(targetText).some(p => p === n || (n.length >= 3 && p.startsWith(n)));
-}
-function isTerminated(m) { return !!(String(m.terminationDate || '').trim() || String(m.terminationReason || '').trim()); }
-function findMember(id) { return id ? state.members.find(m => String(m.id) === String(id)) || null : null; }
 
 let toastTimer;
 function toast(text, type = 'ok', ms = 3000) {
@@ -453,28 +362,26 @@ function toast(text, type = 'ok', ms = 3000) {
   toastTimer = setTimeout(() => { t.hidden = true; }, ms);
 }
 
-async function getJSON(url, timeoutMs = 20000) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  } finally {
-    clearTimeout(timer);
-  }
+function confirmDiscard() {
+  return !state.dirty || confirm('작성 중인 내용이 저장되지 않았습니다. 버리고 계속할까요?');
 }
 
-// 심방 기록 API 호출. 응답 형식으로 서버 버전 문제를 구분해서 알려 줌
-async function visitApi(params) {
+// ───────── 서버 호출 ─────────
+async function visitApi(params, timeoutMs = 25000) {
   const qs = new URLSearchParams({ ...params, t: Date.now() });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let data;
   try {
-    data = await getJSON(`${VISIT_API}?${qs}`);
+    const res = await fetch(`${VISIT_API}?${qs}`, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    data = await res.json();
   } catch (e) {
     if (e.name === 'AbortError') throw new Error('서버 응답이 없습니다. 잠시 후 다시 시도하세요.');
     if (e instanceof SyntaxError) throw new Error('서버가 JSON이 아닌 응답을 보냈습니다. Apps Script 배포 권한(모든 사용자)과 코드 오류를 확인하세요.');
     throw new Error(`서버에 연결하지 못했습니다 (${e.message}).`);
+  } finally {
+    clearTimeout(timer);
   }
   if (Array.isArray(data)) {
     throw new Error('Apps Script가 아직 이전 버전으로 배포되어 있습니다. 배포 관리 > 수정 > 새 버전으로 다시 배포하세요.');
@@ -483,301 +390,163 @@ async function visitApi(params) {
   return data;
 }
 
-function confirmDiscard() {
-  return !state.dirty || confirm('작성 중인 내용이 저장되지 않았습니다. 버리고 계속할까요?');
-}
-
-// ───────── 교인명부 ─────────
-function setSync(status, text) {
-  const el = $('sync');
-  el.className = `sync ${status}`;
-  $('sync-text').textContent = text;
-  el.title = status === 'offline' ? '눌러서 다시 연결' : '';
-}
-
-async function loadMembers(retry = 0) {
-  setSync('loading', '교인명부 불러오는 중');
+// 이름 자동완성 목록과 연도 목록
+async function loadNames() {
   try {
-    const data = await getJSON(`${MEMBER_API}?t=${Date.now()}`, 15000);
-    state.members = (Array.isArray(data) ? data : []).filter(m => m && String(m.name || '').trim());
-    setSync('online', `교인명부 연결됨 (${state.members.length}명)`);
-    // 명부가 늦게 도착한 경우, 이미 열어 둔 기록의 교인 정보 채우기
-    if (!state.member && $('memberId').value) {
-      const m = findMember($('memberId').value);
-      if (m) { state.member = m; renderMemberPanel(); }
-    }
+    const d = await visitApi({ action: 'names' });
+    $('name-list').innerHTML = (d.names || []).map(n => `<option value="${esc(n)}">`).join('');
+    state.years = d.years || [];
+    fillYears();
   } catch (e) {
-    if (retry < 2) return setTimeout(() => loadMembers(retry + 1), 1000);
-    setSync('offline', '교인명부 연결 실패 (다시 시도)');
-    toast('교인명부를 불러오지 못했습니다. 오른쪽 위 버튼을 눌러 다시 시도하세요.', 'error', 5000);
+    console.warn('이름 목록을 불러오지 못했습니다:', e.message);
   }
 }
 
-// ───────── 검색 / 자동완성 ─────────
-function searchMembers(q) {
-  // "주동린 집사"처럼 직분을 붙여 입력해도 찾도록
-  const query = (/[가-힣]/.test(q) ? (personNames(q)[0] || q.trim()) : q.trim()).toLowerCase();
-  if (!query) return [];
-  const hits = state.members.filter(m =>
-    String(m.name || '').toLowerCase().includes(query) ||
-    String(m.engName || '').toLowerCase().includes(query) ||
-    String(m.id || '').toLowerCase() === query);
-  const rank = m => (String(m.name).toLowerCase() === query || String(m.id).toLowerCase() === query ? 0 : 1) + (isTerminated(m) ? 2 : 0);
-  return hits.sort((a, b) => rank(a) - rank(b) || String(a.name).localeCompare(String(b.name), 'ko')).slice(0, 12);
+function fillYears() {
+  const sel = $('range-year');
+  const current = sel.value;
+  const thisYear = String(new Date().getFullYear());
+  const years = [...new Set([thisYear, ...state.years])].sort().reverse();
+  sel.innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join('');
+  sel.value = years.includes(current) ? current : thisYear;
 }
 
-function renderSuggest() {
-  const box = $('suggest');
-  const input = $('member-search');
-  const q = input.value.trim();
-  if (!q) { hideSuggest(); return; }
+// ───────── 이름 검색 ─────────
+async function searchByName(nameArg) {
+  const raw = (nameArg ?? $('search-name').value).trim();
+  const name = personNames(raw)[0] || raw;
+  if (!name) { toast('검색할 이름을 입력하세요.', 'error'); $('search-name').focus(); return; }
 
-  const list = searchMembers(q);
-  state.suggestions = list;
-  state.suggestIndex = list.length ? 0 : -1;
-
-  let html = list.map((m, i) => {
-    const meta = [m.position || '성도', cellGroupText(m.cellGroup) && `샘터 ${cellGroupText(m.cellGroup)}`].filter(Boolean).join(', ');
-    return `<button type="button" class="suggest-item${i === 0 ? ' active' : ''}" role="option" data-i="${i}">
-      <span class="nm">${esc(m.name)}</span>
-      <span class="meta">#${esc(m.id)}${meta ? ` ${esc(meta)}` : ''}</span>
-      ${isTerminated(m) ? '<span class="gone">해지</span>' : ''}
-    </button>`;
-  }).join('');
-
-  if (!state.members.length) {
-    html += `<div class="suggest-empty">교인명부가 아직 연결되지 않았습니다.</div>`;
+  state.found = { name, records: [], loading: true, error: '' };
+  renderFound();
+  const btn = $('search-btn');
+  btn.disabled = true;
+  try {
+    const d = await visitApi({ action: 'search', name });
+    if (state.found?.name !== name) return;   // 그 사이 다른 이름을 검색한 경우
+    state.found.records = sortRecords(d.records || []);
+  } catch (e) {
+    if (state.found?.name === name) state.found.error = e.message;
+  } finally {
+    if (state.found?.name === name) state.found.loading = false;
+    btn.disabled = false;
+    renderFound();
   }
-  // 명부에 없는 분(방문자 등)도 기록할 수 있도록
-  html += `<button type="button" class="suggest-item free" role="option" data-i="free">
-    <span class="nm">명부에 없는 분으로 기록: ${esc(q)}</span></button>`;
-
-  box.innerHTML = html;
-  box.hidden = false;
-  input.setAttribute('aria-expanded', 'true');
+  if (!nameArg && state.found?.records.length) openFoundList();
 }
 
-function hideSuggest() {
-  $('suggest').hidden = true;
-  $('member-search').setAttribute('aria-expanded', 'false');
-  state.suggestIndex = -1;
-}
-
-function moveSuggest(step) {
-  const items = [...$('suggest').querySelectorAll('.suggest-item')];
-  if (!items.length) return;
-  const cur = items.findIndex(el => el.classList.contains('active'));
-  const next = (cur + step + items.length) % items.length;
-  items.forEach((el, i) => el.classList.toggle('active', i === next));
-  items[next].scrollIntoView({ block: 'nearest' });
-}
-
-function pickSuggest(el) {
-  if (!el) return;
-  const i = el.dataset.i;
-  const q = $('member-search').value.trim();
-  hideSuggest();
-  $('member-search').value = '';
-  if (i === 'free') selectTarget(null, q);
-  else selectTarget(state.suggestions[+i]);
-}
-
-// ───────── 대상자 선택 ─────────
-function selectTarget(member, freeName = '') {
-  const name = member ? String(member.name).trim() : freeName;
-  if (!name) return;
-
-  if (state.editing) {
-    // 교인번호가 없는 기존 기록을 같은 이름의 교인과 연결하는 경우
-    if (member && !state.editing.memberId && nameMatches(state.editing.targetName, name)) {
-      state.member = member;
-      $('memberId').value = member.id;
-      state.dirty = true;
-      renderMemberPanel();
-      renderModeBar();
-      toast(`저장하면 이 기록이 #${member.id} ${name} 교인과 연결됩니다.`, 'info', 4000);
-      return;
-    }
-    if (!confirmDiscard()) return;
-    state.member = member;
-    startNew();
-  } else {
-    state.member = member;
-  }
-
-  $('targetName').value = name;
-  $('memberId').value = member ? member.id : '';
-  renderMemberPanel();
-  renderModeBar();
-  loadHistory();
-}
-
-function renderMemberPanel() {
-  const panel = $('member-panel');
-  const name = $('targetName').value.trim();
-  if (!name) { panel.hidden = true; $('use-address').hidden = true; return; }
-
-  const m = state.member;
-  let html = '<div class="member-head"><div>';
-  if (m) {
-    html += `<div class="member-name">${esc(m.name)}<small>#${esc(m.id)}</small>${isTerminated(m) ? '<span class="member-tag">해지</span>' : ''}</div>
-      <div class="member-facts">
-        <span>직분 <b>${esc(m.position || '성도')}</b></span>
-        ${cellGroupText(m.cellGroup) ? `<span>샘터 <b>${esc(cellGroupText(m.cellGroup))}</b></span>` : ''}
-        ${m.phone ? `<span>연락처 <a href="tel:${esc(String(m.phone).replace(/[^0-9+]/g, ''))}">${esc(m.phone)}</a></span>` : ''}
-        ${m.address ? `<span>주소 <b>${esc(m.address)}</b></span>` : ''}
+function renderFound() {
+  const box = $('found');
+  const f = state.found;
+  if (!f) { box.hidden = true; return; }
+  let html;
+  if (f.loading) {
+    html = `<div><strong>${esc(f.name)}</strong> <span class="muted"><span class="spinner"></span> 기록 찾는 중</span></div>`;
+  } else if (f.error) {
+    html = `<div><strong>${esc(f.name)}</strong> <span class="err">조회 오류: ${esc(f.error)}</span></div>
+      <div class="found-actions"><button type="button" class="btn btn-ghost btn-small" onclick="runDiagnosis()">연결 점검</button></div>`;
+  } else if (f.records.length) {
+    const last = f.records[0];
+    html = `<div><strong>${esc(f.name)}</strong> <span class="muted">심방 ${f.records.length}회, 최근 ${esc(last.visitDate)}</span></div>
+      <div class="found-actions">
+        <button type="button" class="btn btn-ghost btn-small" onclick="openFoundList()">기록 보기</button>
+        <button type="button" class="btn btn-primary btn-small" onclick="newForFound()">새 기록 작성</button>
       </div>`;
   } else {
-    html += `<div class="member-name">${esc(name)}<small>교인명부에 연결되지 않음</small></div>`;
+    html = `<div><strong>${esc(f.name)}</strong> <span class="muted">심방 기록이 없습니다.</span></div>
+      <div class="found-actions"><button type="button" class="btn btn-primary btn-small" onclick="newForFound()">새 기록 작성</button></div>`;
   }
-  html += '</div>';
-
-  if (state.historyLoading) {
-    html += `<button type="button" class="history-btn" disabled><span class="spinner"></span>기록 확인 중</button>`;
-  } else if (state.historyError) {
-    html += `<button type="button" class="history-btn error" onclick="runDiagnosis()" title="${esc(state.historyError)}">기록 조회 오류 (점검하기)</button>`;
-  } else if (state.history.length) {
-    html += `<button type="button" class="history-btn" onclick="openHistory()">지난 심방 ${state.history.length}회 보기</button>`;
-  } else {
-    html += `<button type="button" class="history-btn" disabled>지난 심방 기록 없음</button>`;
-  }
-  html += '</div>';
-
-  if (m && (String(m.extendedNotes || '').trim() || String(m.notes || '').trim())) {
-    html += `<details class="member-notes"><summary>교인명부 메모 보기</summary><dl>
-      ${String(m.extendedNotes || '').trim() ? `<div><dt>심방 및 기도 제목</dt><dd>${esc(m.extendedNotes)}</dd></div>` : ''}
-      ${String(m.notes || '').trim() ? `<div><dt>가족 관계 및 연락처</dt><dd>${esc(m.notes)}</dd></div>` : ''}
-    </dl></details>`;
-  }
-
-  panel.innerHTML = html;
-  panel.hidden = false;
-  $('use-address').hidden = !(m && m.address);
+  box.innerHTML = html;
+  box.hidden = false;
 }
 
-function useMemberAddress() {
-  if (state.member && state.member.address) {
-    $('location').value = state.member.address;
-    state.dirty = true;
-  }
+function openFoundList() {
+  const f = state.found;
+  if (!f || !f.records.length) return;
+  $('modal-title').textContent = `${f.name} 님 심방 기록`;
+  $('modal-sub').textContent = `총 ${f.records.length}회, 최신 날짜순`;
+  $('range-bar').hidden = true;
+  renderRecordList(f.records, false);
+  openModal();
 }
 
-async function loadHistory() {
-  const name = $('targetName').value.trim();
-  if (!name) return;
-  state.historyLoading = true;
-  state.historyError = '';
-  state.history = [];
-  renderMemberPanel();
-  try {
-    const data = await visitApi({ action: 'search', memberId: $('memberId').value, name });
-    // 응답이 늦게 와서 그 사이 다른 대상자를 선택한 경우 무시
-    if ($('targetName').value.trim() !== name) return;
-    state.history = sortRecords(data.records || []);
-  } catch (e) {
-    state.historyError = e.message;
-    toast(`지난 기록을 불러오지 못했습니다: ${e.message}`, 'error', 6000);
-  } finally {
-    state.historyLoading = false;
-    renderMemberPanel();
-  }
+// 검색한 분의 새 기록: 대상자 칸에 마지막 기록의 표기("주동린 집사")를 그대로 사용
+function newForFound() {
+  const f = state.found;
+  if (!f) return;
+  if (state.editing && !confirmDiscard()) return;
+  if (state.editing) startNew();
+  const lastTarget = f.records[0] && personNames(f.records[0].targetName).length === 1 ? f.records[0].targetName : f.name;
+  $('targetName').value = lastTarget;
+  state.dirty = true;
+  renderModeBar();
+  $('visitorList').focus();
 }
 
 // ───────── 작성 / 수정 상태 ─────────
 function renderModeBar() {
   const bar = $('mode-bar');
   if (state.editing) {
-    const r = state.editing;
-    const linkNote = !r.memberId
-      ? ($('memberId').value
-          ? `<span class="note">교인번호가 연결되지 않은 기록입니다. 저장하면 #${esc($('memberId').value)} 교인과 연결됩니다.</span>`
-          : `<span class="note">교인번호가 연결되지 않은 기록입니다.</span>`)
-      : '';
     bar.className = 'mode edit';
-    bar.innerHTML = `<div><strong>${esc(fmtVisit(r))}</strong> 심방 기록을 수정하고 있습니다.${linkNote}</div>
-      <button type="button" class="btn btn-ghost btn-small" onclick="newForSameTarget()">새 기록 작성으로 전환</button>`;
+    bar.innerHTML = `<div><strong>${esc(fmtVisit(state.editing))} ${esc(state.editing.targetName)}</strong> 심방 기록을 수정하고 있습니다.</div>
+      <button type="button" class="btn btn-ghost btn-small" onclick="switchToNew()">새 기록 작성으로 전환</button>`;
     $('save-btn').textContent = '변경 사항 저장';
   } else {
-    const name = $('targetName').value.trim();
     bar.className = 'mode new';
-    bar.innerHTML = name
-      ? `<div><strong>${esc(name)}</strong> 님의 새 심방 기록을 작성하고 있습니다.</div>`
-      : `<div>심방 대상자를 검색해서 선택하면 새 기록을 작성할 수 있습니다.</div>`;
+    bar.innerHTML = '<div><strong>새 심방 기록</strong>을 작성하고 있습니다.</div>';
     $('save-btn').textContent = '기록 저장';
   }
 }
 
-// 대상자는 유지하고 내용만 비움
 function startNew() {
-  const keepName = $('targetName').value;
-  const keepId = $('memberId').value;
   $('visit-form').reset();
-  $('targetName').value = keepName;
-  $('memberId').value = keepId;
   $('visitDate').value = today();
   state.editing = null;
   state.dirty = false;
   renderModeBar();
 }
 
-function newForSameTarget() {
+function switchToNew() {
   if (!confirmDiscard()) return;
-  if (state.editing && !state.editing.memberId && !state.member) $('memberId').value = '';
   startNew();
 }
 
 function resetAll() {
   if (!confirmDiscard()) return;
-  state.member = null;
-  state.history = [];
-  $('targetName').value = '';
-  $('memberId').value = '';
-  $('member-search').value = '';
-  hideSuggest();
+  state.found = null;
+  $('search-name').value = '';
+  renderFound();
   startNew();
-  renderMemberPanel();
-  $('member-search').focus();
+  $('search-name').focus();
 }
 
 function loadRecord(rec) {
   if (state.editing && state.editing.id === rec.id) { closeModal(); return; }
   if (!confirmDiscard()) return;
-
   FIELDS.forEach(k => { $(k).value = rec[k] || ''; });
   state.editing = rec;
-
-  const linked = findMember(rec.memberId);
-  let linkPending = false;
-  if (linked) {
-    state.member = linked;
-    $('memberId').value = linked.id;
-  } else if (!rec.memberId && state.member && nameMatches(rec.targetName, state.member.name)) {
-    // 교인번호 미연결 기록: 지금 선택된 같은 이름의 교인과 연결 제안 (저장 시 반영)
-    $('memberId').value = state.member.id;
-    linkPending = true;
-  } else {
-    if (!rec.memberId || String(state.member?.id) !== String(rec.memberId)) state.member = null;
-    $('memberId').value = rec.memberId || '';
-  }
-
-  const targetChanged = !state.history.some(h => h.id === rec.id);
-  state.dirty = linkPending;   // 교인번호 연결만 해도 저장할 수 있도록
+  state.dirty = false;
   closeModal();
   renderModeBar();
-  renderMemberPanel();
-  if (targetChanged) loadHistory();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ───────── 모달 ─────────
+function recButton(r, i, showWho) {
+  const current = state.editing && state.editing.id === r.id ? ' current' : '';
+  const who = showWho ? `${esc(r.targetName)} | ` : '';
+  return `<button type="button" class="rec${current}" data-i="${i}">
+    <div class="rec-top"><span class="rec-date">${esc(fmtVisit(r))}</span><span class="rec-loc">${esc(r.location || '장소 미기재')}</span></div>
+    <div class="rec-who">${who}사유: ${esc(r.reason || '일반')}${r.visitorList ? ` | 참가: ${esc(r.visitorList)}` : ''}</div>
+    <div class="rec-body">${esc(r.details)}</div>
+  </button>`;
+}
+
 function renderRecordList(records, showWho) {
-  const list = $('modal-list');
   state.modalRecords = records;
-  if (!records.length) {
-    list.innerHTML = `<div class="modal-empty">${$('range-bar').hidden ? '심방 기록이 없습니다.' : '이 기간에는 심방 기록이 없습니다. 기간을 넓혀서 다시 조회하세요.'}</div>`;
-    return;
-  }
-  list.innerHTML = records.map((r, i) => recButton(r, i, showWho)).join('');
+  $('modal-list').innerHTML = records.length
+    ? records.map((r, i) => recButton(r, i, showWho)).join('')
+    : '<div class="modal-empty">심방 기록이 없습니다.</div>';
 }
 
 function openModal() {
@@ -790,128 +559,91 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-function openHistory() {
-  if (!state.history.length) return;
-  const name = $('targetName').value.trim();
-  $('modal-title').textContent = `${name} 님 심방 기록`;
-  $('modal-sub').textContent = `총 ${state.history.length}회, 최근 날짜순`;
-  $('range-bar').hidden = true;
-  renderRecordList(state.history, false);
-  openModal();
-}
-
+// ───────── 심방 기록 조회 (연도별) ─────────
 function openRange() {
-  $('modal-title').textContent = '기간별 심방 명단';
-  $('modal-sub').textContent = '기간을 정하고 조회하세요';
+  fillYears();
+  $('modal-title').textContent = '심방 기록 조회';
+  $('modal-sub').textContent = '연도를 고른 뒤 Date(최신 날짜순) 또는 Name(이름별 명단)을 누르세요';
   $('range-bar').hidden = false;
-  $('view-date').setAttribute('aria-pressed', String(state.rangeView === 'date'));
-  $('view-roster').setAttribute('aria-pressed', String(state.rangeView === 'roster'));
-  if (!$('range-from').value) $('range-from').value = monthsAgo(3);
-  if (!$('range-to').value) $('range-to').value = today();
-  $('modal-list').innerHTML = '';
+  setViewButtons('');
+  state.range = { year: '', records: [], view: '' };
+  $('modal-list').innerHTML = '<div class="modal-empty">연도를 고른 뒤 Date 또는 Name을 누르면 조회합니다.</div>';
   openModal();
-  runRange();
 }
 
-function setRangeView(view) {
-  state.rangeView = view;
-  try { localStorage.setItem('visitRangeView', view); } catch (e) { /* 저장 안 되어도 동작 */ }
-  $('view-roster').setAttribute('aria-pressed', String(view === 'roster'));
+function setViewButtons(view) {
   $('view-date').setAttribute('aria-pressed', String(view === 'date'));
-  renderRange();
+  $('view-name').setAttribute('aria-pressed', String(view === 'name'));
 }
 
-// 기간 내 기록을 사람별로 묶음 (교인번호 우선, 없으면 직분을 뗀 이름)
-function groupByPerson(records) {
-  const groups = new Map();
-  records.forEach((r, i) => {
-    const m = findMember(r.memberId);
-    const names = personNames(r.targetName);
-    const key = r.memberId ? `id:${r.memberId}` : `nm:${names.join(',') || r.targetName}`;
-    if (!groups.has(key)) {
-      groups.set(key, { label: m ? String(m.name) : (names.join(', ') || r.targetName), member: m, memberId: r.memberId, items: [] });
-    }
-    groups.get(key).items.push(i);
-  });
-  return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label, 'ko'));
-}
-
-function recButton(r, i, showWho) {
-  const m = findMember(r.memberId);
-  const who = showWho
-    ? `${esc(r.targetName)}${r.memberId ? ` #${esc(r.memberId)}` : ' <span class="unlinked">(교인번호 미연결)</span>'}${m && cellGroupText(m.cellGroup) ? `, 샘터 ${esc(cellGroupText(m.cellGroup))}` : ''} | `
-    : (!r.memberId ? '<span class="unlinked">교인번호 미연결</span> | ' : '');
-  const current = state.editing && state.editing.id === r.id ? ' current' : '';
-  return `<button type="button" class="rec${current}" data-i="${i}">
-    <div class="rec-top"><span class="rec-date">${esc(fmtVisit(r))}</span><span class="rec-loc">${esc(r.location || '장소 미기재')}</span></div>
-    <div class="rec-who">${who}사유: ${esc(r.reason || '일반')}</div>
-    <div class="rec-body">${esc(r.details)}</div>
-  </button>`;
-}
-
-function renderRange() {
-  const records = state.rangeRecords;
-  if ($('range-bar').hidden) return;
-  if (state.rangeView === 'date' || !records.length) {
-    renderRecordList(records, true);
-    return;
-  }
-
-  state.modalRecords = records;
-  const groups = groupByPerson(records);
-  $('modal-list').innerHTML = `<div class="roster-actions"><button type="button" class="btn btn-ghost btn-small" onclick="copyRoster()">명단 복사</button></div>` +
-    groups.map(g => {
-      const m = g.member;
-      const meta = m
-        ? [m.position || '성도', cellGroupText(m.cellGroup) && `샘터 ${cellGroupText(m.cellGroup)}`].filter(Boolean).join(', ')
-        : (g.memberId ? `#${g.memberId}` : '교인번호 미연결');
-      const last = records[g.items[0]].visitDate;   // 기록이 최근순이므로 첫 번째가 최근
-      return `<details class="person">
-        <summary><span class="p-name">${esc(g.label)}</span><span class="p-meta">${esc(meta)}</span>
-          <span class="p-count">${g.items.length}회</span><span class="p-last">${esc(last)}</span></summary>
-        <div class="person-recs">${g.items.map(i => recButton(records[i], i, false)).join('')}</div>
-      </details>`;
-    }).join('');
-}
-
-async function copyRoster() {
-  const groups = groupByPerson(state.rangeRecords);
-  const lines = groups.map(g => {
-    const m = g.member;
-    const extra = m ? [m.position || '성도', cellGroupText(m.cellGroup) && `샘터 ${cellGroupText(m.cellGroup)}`].filter(Boolean).join(', ') : '';
-    const dates = g.items.map(i => state.rangeRecords[i].visitDate).reverse().join(', ');
-    return `${g.label}${extra ? ` (${extra})` : ''}: ${g.items.length}회 [${dates}]`;
-  });
-  const text = `심방 명단 ${$('range-from').value} ~ ${$('range-to').value} (${groups.length}명, ${state.rangeRecords.length}회)\n` + lines.join('\n');
+async function runRange(view) {
+  const year = $('range-year').value;
+  setViewButtons(view);
+  state.range.view = view;
+  $('view-date').disabled = $('view-name').disabled = true;
+  $('modal-list').innerHTML = `<div class="modal-empty"><span class="spinner"></span> ${esc(year)}년 기록 조회 중</div>`;
   try {
-    await navigator.clipboard.writeText(text);
-    toast('명단을 복사했습니다.');
-  } catch (e) {
-    toast('복사하지 못했습니다. 브라우저 권한을 확인하세요.', 'error');
-  }
-}
-
-async function runRange() {
-  const from = $('range-from').value;
-  const to = $('range-to').value;
-  if (!from || !to) return toast('시작일과 종료일을 모두 선택하세요.', 'error');
-  if (from > to) return toast('시작일이 종료일보다 늦습니다.', 'error');
-
-  const btn = $('range-go');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  try {
-    const data = await visitApi({ action: 'list', from, to });
-    const records = sortRecords(data.records || []);
-    state.rangeRecords = records;
-    const people = groupByPerson(records).length;
-    $('modal-sub').textContent = `${from} ~ ${to}: ${people}명, 심방 ${records.length}회${records.length >= 500 ? ' (최근 500건까지 표시)' : ''}`;
+    const d = await visitApi({ action: 'list', year });
+    state.range.year = year;
+    state.range.records = sortRecords(d.records || []);
     renderRange();
   } catch (e) {
     $('modal-list').innerHTML = `<div class="modal-empty">기록을 불러오지 못했습니다: ${esc(e.message)}</div>`;
   } finally {
-    btn.disabled = false;
-    btn.textContent = '조회';
+    $('view-date').disabled = $('view-name').disabled = false;
+  }
+}
+
+// 기록을 사람별로 묶음 (직분을 뗀 이름 기준)
+function groupByPerson(records) {
+  const groups = new Map();
+  records.forEach((r, i) => {
+    const names = personNames(r.targetName);
+    const label = names.join(', ') || r.targetName || '(이름 없음)';
+    if (!groups.has(label)) groups.set(label, { label, items: [] });
+    groups.get(label).items.push(i);
+  });
+  return [...groups.values()].sort((a, b) => a.label.localeCompare(b.label, 'ko'));
+}
+
+function renderRange() {
+  const { year, records, view } = state.range;
+  const people = groupByPerson(records);
+  $('modal-sub').textContent = `${year}년: ${people.length}명, 심방 ${records.length}회${records.length >= 500 ? ' (최근 500건까지 표시)' : ''}`;
+  if (!records.length) {
+    $('modal-list').innerHTML = `<div class="modal-empty">${esc(year)}년에는 심방 기록이 없습니다.</div>`;
+    return;
+  }
+  state.modalRecords = records;
+  const copyBtn = `<div class="list-actions"><button type="button" class="btn btn-ghost btn-small" onclick="copyList()">목록 복사</button></div>`;
+
+  if (view === 'date') {
+    $('modal-list').innerHTML = copyBtn + records.map((r, i) => recButton(r, i, true)).join('');
+    return;
+  }
+  $('modal-list').innerHTML = copyBtn + people.map(g => `<details class="person">
+      <summary><span class="p-name">${esc(g.label)}</span>
+        <span class="p-count">${g.items.length}회</span><span class="p-last">${esc(records[g.items[0]].visitDate)}</span></summary>
+      <div class="person-recs">${g.items.map(i => recButton(records[i], i, false)).join('')}</div>
+    </details>`).join('');
+}
+
+async function copyList() {
+  const { year, records, view } = state.range;
+  let text;
+  if (view === 'date') {
+    text = `${year}년 심방 기록 (${records.length}회)\n` +
+      records.map(r => `${fmtVisit(r)}  ${r.targetName}${r.reason ? `  [${r.reason}]` : ''}`).join('\n');
+  } else {
+    const people = groupByPerson(records);
+    text = `${year}년 심방 명단 (${people.length}명, ${records.length}회)\n` +
+      people.map(g => `${g.label}: ${g.items.length}회 [${g.items.map(i => records[i].visitDate).reverse().join(', ')}]`).join('\n');
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('목록을 복사했습니다.');
+  } catch (e) {
+    toast('복사하지 못했습니다. 브라우저 권한을 확인하세요.', 'error');
   }
 }
 
@@ -920,11 +652,10 @@ async function runDiagnosis() {
   $('modal-title').textContent = '연결 점검';
   $('modal-sub').textContent = '심방 기록 시트를 어떻게 읽고 있는지 확인합니다';
   $('range-bar').hidden = true;
-  $('modal-list').innerHTML = '<div class="modal-empty"><span class="spinner" style="display:inline-block"></span> 확인 중</div>';
+  $('modal-list').innerHTML = '<div class="modal-empty"><span class="spinner"></span> 확인 중</div>';
   openModal();
 
   let html = '<dl class="diag">';
-  html += `<dt>교인명부</dt><dd>${state.members.length ? `<span class="good">연결됨</span> (${state.members.length}명)` : '<span class="bad">불러오지 못함</span>'}</dd>`;
   try {
     const d = await visitApi({ action: 'diag' });
     html += `<dt>심방 기록 서버</dt><dd><span class="good">연결됨</span> (버전 ${esc(d.version)})</dd>`;
@@ -933,11 +664,7 @@ async function runDiagnosis() {
     html += `<dt>열 연결</dt><dd>${esc((d.columns || []).join('\n'))}</dd>`;
     html += `<dt>읽은 기록</dt><dd>${d.count ? `<span class="good">${d.count}건</span>` : '<span class="bad">0건</span>'}</dd>`;
     if (d.samples && d.samples.length) {
-      html += `<dt>최근 기록 (날짜 | 시간 | 대상자 | 이름 인식)</dt><dd>${esc(d.samples.join('\n'))}</dd>`;
-    }
-    if ($('targetName').value.trim()) {
-      const s = await visitApi({ action: 'search', memberId: $('memberId').value, name: $('targetName').value.trim() });
-      html += `<dt>"${esc($('targetName').value.trim())}" 검색 결과</dt><dd>${s.records.length}건</dd>`;
+      html += `<dt>시트 맨 위 기록 (날짜 | 시간 | 대상자 | 이름 인식)</dt><dd>${esc(d.samples.join('\n'))}</dd>`;
     }
   } catch (e) {
     html += `<dt>심방 기록 서버</dt><dd class="bad">${esc(e.message)}</dd>`;
@@ -948,16 +675,13 @@ async function runDiagnosis() {
 
 // ───────── 저장 ─────────
 function validate() {
-  if (!$('targetName').value.trim()) {
-    toast('심방 대상자를 검색해서 선택하세요.', 'error');
-    $('member-search').focus();
-    return false;
-  }
-  const required = ['visitDate', 'startTime', 'endTime', 'visitorList', 'details'];
-  for (const id of required) {
+  const required = [
+    ['visitDate', '심방날짜'], ['startTime', '시작시간'], ['endTime', '종료시간'],
+    ['targetName', '심방 대상자'], ['visitorList', '심방 참가자'], ['details', '상세내용']
+  ];
+  for (const [id, label] of required) {
     if (!$(id).value.trim()) {
-      const label = document.querySelector(`label[for="${id}"]`)?.firstChild?.textContent?.trim() || '필수 항목';
-      toast(`${id === 'endTime' ? '종료시간' : label}을(를) 입력하세요.`, 'error');
+      toast(`${label}을(를) 입력하세요.`, 'error');
       $(id).focus();
       return false;
     }
@@ -983,8 +707,7 @@ async function save() {
   const payload = {
     action: isUpdate ? 'update' : 'create',
     id: isUpdate ? state.editing.id : '',
-    expectedUpdatedAt: isUpdate ? state.editing.updatedAt || '' : '',
-    memberId: $('memberId').value
+    expectedUpdatedAt: isUpdate ? state.editing.updatedAt || '' : ''
   };
   FIELDS.forEach(k => { payload[k] = $(k).value.trim(); });
 
@@ -1002,12 +725,13 @@ async function save() {
     if (isUpdate) {
       toast('변경 사항을 저장했습니다.');
       state.editing = data.record;
-      renderModeBar();
     } else {
       toast('심방 기록을 저장했습니다.');
       startNew();
     }
-    loadHistory();
+    // 검색 결과와 이름 목록 새로 고침
+    if (state.found) searchByName(state.found.name);
+    loadNames();
   } catch (e) {
     toast(`저장하지 못했습니다: ${e.message}`, 'error', 6000);
   } finally {
@@ -1019,29 +743,13 @@ async function save() {
 
 // ───────── 이벤트 연결 ─────────
 window.addEventListener('DOMContentLoaded', () => {
-  $('visitDate').value = today();
-  renderModeBar();
-  loadMembers();
+  startNew();
+  fillYears();
+  loadNames();
 
-  const search = $('member-search');
-  search.addEventListener('input', renderSuggest);
-  search.addEventListener('focus', () => { if (search.value.trim()) renderSuggest(); });
-  search.addEventListener('keydown', e => {
+  $('search-name').addEventListener('keydown', e => {
     if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중에는 무시
-    if ($('suggest').hidden) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); moveSuggest(1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); moveSuggest(-1); }
-    else if (e.key === 'Enter') { e.preventDefault(); pickSuggest($('suggest').querySelector('.suggest-item.active')); }
-    else if (e.key === 'Escape') { hideSuggest(); }
-  });
-
-  // mousedown에서 선택해야 input blur보다 먼저 처리됨
-  $('suggest').addEventListener('mousedown', e => {
-    const item = e.target.closest('.suggest-item');
-    if (item) { e.preventDefault(); pickSuggest(item); }
-  });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.search')) hideSuggest();
+    if (e.key === 'Enter') { e.preventDefault(); searchByName(); }
   });
 
   $('modal-list').addEventListener('click', e => {

@@ -158,7 +158,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .p-last { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
 .person-recs { display: grid; gap: 6px; padding: 0 10px 10px; }
 .person-recs .rec { padding: 8px 10px; }
-.list-actions { display: flex; justify-content: flex-end; }
+.list-actions { display: flex; justify-content: flex-end; gap: 6px; }
 
 /* 연결 점검 */
 .diag { margin: 0; font-size: 0.82rem; line-height: 1.6; padding: 4px 6px; }
@@ -166,6 +166,14 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .diag dd { margin: 2px 0 0; white-space: pre-wrap; word-break: break-all; }
 .diag .bad { color: var(--danger); font-weight: 700; }
 .diag .good { color: var(--ok); font-weight: 700; }
+
+/* 이메일 내보내기 */
+#mail-modal { z-index: 2500; }
+.mail-form { padding: 14px 16px 16px; display: grid; gap: 12px; overflow-y: auto; }
+.mail-form textarea.field { font-family: inherit; font-size: 0.88rem; line-height: 1.65; min-height: 300px; }
+.mail-warn { font-size: 0.8rem; color: var(--edit); background: var(--edit-soft); border: 1px solid var(--edit-line); border-radius: 8px; padding: 7px 10px; }
+.mail-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.mode-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* 알림 */
 #toast {
@@ -217,6 +225,41 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
       </div>
     </div>
     <div id="modal-list" class="modal-list"></div>
+  </div>
+</div>
+
+<!-- 이메일 내보내기 -->
+<div id="mail-modal" class="modal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="mail-title">
+    <div class="modal-head">
+      <div>
+        <h3 id="mail-title">이메일로 보내기</h3>
+        <p>받는 사람, 제목, 본문을 확인하고 필요하면 고친 뒤 보내세요</p>
+      </div>
+      <button type="button" class="icon-btn" onclick="closeMail()" aria-label="닫기">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="mail-form">
+      <div>
+        <label class="lbl" for="mail-to">받는 사람</label>
+        <input type="email" id="mail-to" class="field" multiple placeholder="이메일 주소 (여러 명은 쉼표로 구분)">
+      </div>
+      <div>
+        <label class="lbl" for="mail-subject">제목</label>
+        <input type="text" id="mail-subject" class="field">
+      </div>
+      <div>
+        <label class="lbl" for="mail-body">본문</label>
+        <textarea id="mail-body" class="field" rows="14"></textarea>
+      </div>
+      <div id="mail-warn" class="mail-warn" hidden>본문이 길어서 메일 앱에서 잘릴 수 있습니다. "내용 복사"를 누른 뒤 메일 본문에 붙여 넣으세요.</div>
+      <div class="mail-actions">
+        <button type="button" class="btn btn-ghost" onclick="copyMail()">내용 복사</button>
+        <button type="button" class="btn btn-ghost" onclick="sendMail('app')">메일 앱으로 보내기</button>
+        <button type="button" class="btn btn-primary" onclick="sendMail('gmail')">Gmail로 보내기</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -489,11 +532,15 @@ function renderModeBar() {
   if (state.editing) {
     bar.className = 'mode edit';
     bar.innerHTML = `<div><strong>${esc(fmtVisit(state.editing))} ${esc(state.editing.targetName)}</strong> 심방 기록을 수정하고 있습니다.</div>
-      <button type="button" class="btn btn-ghost btn-small" onclick="switchToNew()">새 기록 작성으로 전환</button>`;
+      <div class="mode-actions">
+        <button type="button" class="btn btn-ghost btn-small" onclick="openMailForForm()">이메일로 보내기</button>
+        <button type="button" class="btn btn-ghost btn-small" onclick="switchToNew()">새 기록 작성으로 전환</button>
+      </div>`;
     $('save-btn').textContent = '변경 사항 저장';
   } else {
     bar.className = 'mode new';
-    bar.innerHTML = '<div><strong>새 심방 기록</strong>을 작성하고 있습니다.</div>';
+    bar.innerHTML = `<div><strong>새 심방 기록</strong>을 작성하고 있습니다.</div>
+      <div class="mode-actions"><button type="button" class="btn btn-ghost btn-small" onclick="openMailForForm()">이메일로 보내기</button></div>`;
     $('save-btn').textContent = '기록 저장';
   }
 }
@@ -615,7 +662,10 @@ function renderRange() {
     return;
   }
   state.modalRecords = records;
-  const copyBtn = `<div class="list-actions"><button type="button" class="btn btn-ghost btn-small" onclick="copyList()">목록 복사</button></div>`;
+  const copyBtn = `<div class="list-actions">
+    <button type="button" class="btn btn-ghost btn-small" onclick="copyList()">목록 복사</button>
+    <button type="button" class="btn btn-ghost btn-small" onclick="openMailForList()">이메일로 보내기</button>
+  </div>`;
 
   if (view === 'date') {
     $('modal-list').innerHTML = copyBtn + records.map((r, i) => recButton(r, i, true)).join('');
@@ -628,7 +678,7 @@ function renderRange() {
     </details>`).join('');
 }
 
-async function copyList() {
+function listText() {
   const { year, records, view } = state.range;
   let text;
   if (view === 'date') {
@@ -639,9 +689,111 @@ async function copyList() {
     text = `${year}년 심방 명단 (${people.length}명, ${records.length}회)\n` +
       people.map(g => `${g.label}: ${g.items.length}회 [${g.items.map(i => records[i].visitDate).reverse().join(', ')}]`).join('\n');
   }
+  return text;
+}
+
+async function copyList() {
+  const text = listText();
   try {
     await navigator.clipboard.writeText(text);
     toast('목록을 복사했습니다.');
+  } catch (e) {
+    toast('복사하지 못했습니다. 브라우저 권한을 확인하세요.', 'error');
+  }
+}
+
+// ───────── 이메일 내보내기 ─────────
+const MAIL_LINE = '────────────────────────';
+const MAIL_FOOTER = `${MAIL_LINE}\n시카고 언약장로교회 교인 심방 기록\n※ 목회 기밀 내용이 포함되어 있습니다. 전달하지 마세요.`;
+const MAILTO_LIMIT = 1800;
+
+function formValues() {
+  const v = {};
+  FIELDS.forEach(k => { v[k] = $(k).value.trim(); });
+  return v;
+}
+
+function recordMail(r) {
+  const wd = weekday(r.visitDate);
+  const when = `${r.visitDate}${wd ? ` (${wd})` : ''}${r.startTime ? `  ${r.startTime}${r.endTime ? ` ~ ${r.endTime}` : ''}` : ''}`;
+  const row = (label, value) => `• ${label}: ${value || '-'}`;
+  const subject = `[심방 기록] ${r.visitDate || ''} ${r.targetName || ''}`.trim();
+  const body = [
+    '교인 심방 기록',
+    MAIL_LINE,
+    row('심방날짜', when),
+    row('심방 대상자', r.targetName),
+    row('심방 요청자', r.requestor),
+    row('심방 참가자', r.visitorList),
+    row('사유 / 목적', r.reason),
+    row('심방 장소', r.location),
+    '',
+    '[상세내용]',
+    r.details || '-',
+    '',
+    '[향후관리 / 계획]',
+    r.followUp || '-',
+    '',
+    MAIL_FOOTER
+  ].join('\n');
+  return { subject, body };
+}
+
+function openMailForForm() {
+  const v = formValues();
+  if (!v.targetName && !v.details) return toast('보낼 내용이 없습니다. 기록을 불러오거나 작성하세요.', 'error');
+  openMail(recordMail(v));
+}
+
+function openMailForList() {
+  const { year, records, view } = state.range;
+  if (!records.length) return;
+  const people = groupByPerson(records).length;
+  const subject = view === 'date'
+    ? `[심방 기록] ${year}년 심방 기록 (${records.length}회)`
+    : `[심방 기록] ${year}년 심방 명단 (${people}명, ${records.length}회)`;
+  openMail({ subject, body: `${listText()}\n\n${MAIL_FOOTER}` });
+}
+
+function openMail({ subject, body }) {
+  try { $('mail-to').value = localStorage.getItem('visitMailTo') || ''; } catch (e) { /* 무시 */ }
+  $('mail-subject').value = subject;
+  $('mail-body').value = body;
+  updateMailWarn();
+  $('mail-modal').hidden = false;
+  document.body.style.overflow = 'hidden';
+  ($('mail-to').value ? $('mail-subject') : $('mail-to')).focus();
+}
+
+function closeMail() {
+  $('mail-modal').hidden = true;
+  if ($('modal').hidden) document.body.style.overflow = '';
+}
+
+function updateMailWarn() {
+  $('mail-warn').hidden = encodeURIComponent($('mail-body').value).length <= MAILTO_LIMIT * 3;
+}
+
+function sendMail(kind) {
+  const to = $('mail-to').value.trim();
+  const subject = $('mail-subject').value;
+  const body = $('mail-body').value;
+  try { localStorage.setItem('visitMailTo', to); } catch (e) { /* 무시 */ }
+  if (kind === 'gmail') {
+    const q = new URLSearchParams({ view: 'cm', fs: '1', to, su: subject, body });
+    window.open(`https://mail.google.com/mail/?${q}`, '_blank', 'noopener');
+  } else {
+    // mailto는 공백을 %20으로 써야 메일 앱에서 +로 보이지 않음
+    const enc = s => encodeURIComponent(s).replace(/%0A/g, '%0D%0A');
+    window.location.href = `mailto:${encodeURIComponent(to).replace(/%2C/g, ',').replace(/%40/g, '@')}?subject=${enc(subject)}&body=${enc(body)}`;
+  }
+}
+
+async function copyMail() {
+  const text = `제목: ${$('mail-subject').value}\n\n${$('mail-body').value}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('제목과 본문을 복사했습니다.');
   } catch (e) {
     toast('복사하지 못했습니다. 브라우저 권한을 확인하세요.', 'error');
   }
@@ -662,6 +814,12 @@ async function runDiagnosis() {
     html += `<dt>사용 중인 시트</dt><dd>${esc(d.sheet)} (전체 시트: ${esc((d.sheets || []).join(', '))})</dd>`;
     html += `<dt>1행 헤더</dt><dd>${esc((d.headers || []).join(' | '))}</dd>`;
     html += `<dt>열 연결</dt><dd>${esc((d.columns || []).join('\n'))}</dd>`;
+    if (d.notify) {
+      const when = [d.notify.onCreate && '새 기록 저장', d.notify.onUpdate && '기록 수정'].filter(Boolean).join(', ');
+      html += `<dt>저장 시 자동 이메일</dt><dd>${d.notify.to
+        ? `<span class="good">${esc(d.notify.to)}</span> (${esc(when || '보내지 않음')})`
+        : '<span class="bad">받는 사람이 설정되지 않음</span>'}</dd>`;
+    }
     html += `<dt>읽은 기록</dt><dd>${d.count ? `<span class="good">${d.count}건</span>` : '<span class="bad">0건</span>'}</dd>`;
     if (d.samples && d.samples.length) {
       html += `<dt>시트 맨 위 기록 (날짜 | 시간 | 대상자 | 이름 인식)</dt><dd>${esc(d.samples.join('\n'))}</dd>`;
@@ -722,13 +880,10 @@ async function save() {
     if (!data.success) throw new Error(data.message || '알 수 없는 오류');
 
     state.dirty = false;
-    if (isUpdate) {
-      toast('변경 사항을 저장했습니다.');
-      state.editing = data.record;
-    } else {
-      toast('심방 기록을 저장했습니다.');
-      startNew();
-    }
+    toast(isUpdate ? '변경 사항을 저장했습니다.' : '심방 기록을 저장했습니다.');
+    if (data.mailError) console.warn('자동 이메일 발송 실패:', data.mailError);   // 화면에는 표시하지 않음
+    if (isUpdate) state.editing = data.record;
+    else startNew();
     // 검색 결과와 이름 목록 새로 고침
     if (state.found) searchByName(state.found.name);
     loadNames();
@@ -757,7 +912,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (item) loadRecord(state.modalRecords[+item.dataset.i]);
   });
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').hidden) closeModal(); });
+  $('mail-modal').addEventListener('click', e => { if (e.target === $('mail-modal')) closeMail(); });
+  $('mail-body').addEventListener('input', updateMailWarn);
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('mail-modal').hidden) closeMail();
+    else if (!$('modal').hidden) closeModal();
+  });
 
   $('visit-form').addEventListener('input', () => { state.dirty = true; });
   $('visit-form').addEventListener('submit', e => e.preventDefault());

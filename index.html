@@ -592,7 +592,6 @@ function showDetail(rec) {
   $('modal-list').innerHTML = `<div class="detail">
     <div class="detail-nav">
       <button type="button" class="btn btn-ghost btn-small" data-act="back">← 목록으로</button>
-      <button type="button" class="btn btn-ghost btn-small" data-act="edit">이 기록 수정</button>
     </div>
     <div class="detail-when">${esc(when)}</div>
     <dl class="detail-grid">
@@ -611,17 +610,6 @@ function showDetail(rec) {
 function backToList() {
   state.detail = null;
   if (typeof state.listBack === 'function') state.listBack();
-}
-
-function loadRecord(rec) {
-  if (state.editing && state.editing.id === rec.id) { closeModal(); return; }
-  if (!confirmDiscard()) return;
-  FIELDS.forEach(k => { $(k).value = rec[k] || ''; });
-  state.editing = rec;
-  state.dirty = false;
-  closeModal();
-  renderModeBar();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ───────── 모달 ─────────
@@ -862,7 +850,6 @@ window.addEventListener('DOMContentLoaded', () => {
   $('modal-list').addEventListener('click', e => {
     const act = e.target.closest('[data-act]');
     if (act && act.dataset.act === 'back') return backToList();
-    if (act && act.dataset.act === 'edit') return loadRecord(state.detail);
     const item = e.target.closest('.rec');
     if (item) showDetail(state.modalRecords[+item.dataset.i]);
   });

@@ -87,7 +87,9 @@ select.field { padding-right: 32px; }
 
 /* 툴바 */
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--line-soft); }
-.search { position: relative; flex: 1 1 280px; display: flex; gap: 8px; }
+.search { position: relative; flex: 0 1 auto; display: flex; gap: 8px; }
+.search .ac-wrap { flex: 0 1 220px; min-width: 160px; }
+.toolbar .actions { margin-left: auto; }
 .search .field { padding-left: 38px; }
 .search svg { z-index: 1; }
 .search > svg { position: absolute; left: 12px; top: 13px; width: 16px; height: 16px; color: #94a3b8; pointer-events: none; }
@@ -216,6 +218,8 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
   form { grid-template-columns: 1fr; padding: 16px 14px; }
   .c2, .c3, .c4 { grid-column: 1 / -1; }
   .actions { width: 100%; }
+  .search { flex: 1 1 100%; }
+  .search .ac-wrap { flex: 1 1 auto; }
   .range { flex-wrap: wrap; }
   .view-toggle { width: 100%; margin-left: 0; }
   .view-toggle button { flex: 1; }
@@ -263,15 +267,15 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
     <div class="toolbar">
       <div class="search">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <div class="ac-wrap" style="flex:1">
-          <input type="text" id="search-name" class="field" placeholder="심방 대상자 이름으로 검색" autocomplete="off" role="combobox" aria-expanded="false">
+        <div class="ac-wrap">
+          <input type="text" id="search-name" class="field" placeholder="대상자 이름 검색" autocomplete="off" role="combobox" aria-expanded="false">
           <div class="suggest" role="listbox" hidden></div>
         </div>
         <button type="button" id="search-btn" class="btn btn-ghost" onclick="searchByName()">검색</button>
       </div>
       <div class="actions">
         <button type="button" class="btn btn-ghost" onclick="openRange()">심방 기록 조회</button>
-        <button type="button" class="btn btn-danger" onclick="resetAll()">초기화</button>
+        <button type="button" class="btn btn-ghost" onclick="resetAll()">새 심방 작성</button>
         <button type="button" id="save-btn" class="btn btn-primary" onclick="save()">기록 저장</button>
       </div>
     </div>

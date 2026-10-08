@@ -24,6 +24,7 @@
   --danger: #dc2626;
   --danger-line: #fca5a5;
   --ok: #059669;
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -88,6 +89,7 @@ select.field { padding-right: 32px; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; border-bottom: 1px solid var(--line-soft); }
 .search { position: relative; flex: 1 1 280px; display: flex; gap: 8px; }
 .search .field { padding-left: 38px; }
+.search svg { z-index: 1; }
 .search > svg { position: absolute; left: 12px; top: 13px; width: 16px; height: 16px; color: #94a3b8; pointer-events: none; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .actions .btn { flex: 1 1 auto; }
@@ -109,13 +111,6 @@ select.field { padding-right: 32px; }
 .found .muted { color: var(--muted); }
 .found .err { color: var(--danger); font-weight: 700; }
 .found-actions { display: flex; gap: 6px; }
-
-/* 작성/수정 상태 표시줄 */
-.mode { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; font-size: 0.88rem; border-bottom: 1px solid var(--line-soft); }
-.mode.new { background: var(--surface); color: var(--muted); }
-.mode.new strong { color: var(--ink-strong); }
-.mode.edit { background: var(--edit-soft); border-bottom-color: var(--edit-line); color: var(--edit); border-left: 4px solid #f59e0b; }
-.mode.edit strong { color: #78350f; }
 
 /* 폼 */
 form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 18px; }
@@ -170,6 +165,30 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 .person-recs .rec { padding: 8px 10px; }
 .list-actions { display: flex; justify-content: flex-end; gap: 6px; }
 
+/* 기록 상세 보기 */
+.detail { padding: 4px 6px 8px; }
+.detail-nav { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.detail-when { font-size: 1.05rem; font-weight: 800; color: var(--ink-strong); margin-bottom: 10px; }
+.detail-grid { margin: 0 0 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; }
+.detail-grid dt { font-size: 0.75rem; font-weight: 800; color: var(--muted); }
+.detail-grid dd { margin: 1px 0 0; font-size: 0.92rem; color: var(--ink); }
+.detail section { border-top: 1px solid var(--line-soft); padding-top: 10px; margin-top: 10px; }
+.detail h4 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 800; color: #334155; }
+.detail p { margin: 0; white-space: pre-wrap; font-size: 0.92rem; line-height: 1.7; }
+
+/* 이름 자동완성 (흰 바탕, 검은 글씨) */
+.ac-wrap { position: relative; }
+.suggest {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 60;
+  background: #fff; color: var(--ink-strong); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 0.14); max-height: 280px; overflow-y: auto; padding: 4px;
+}
+.suggest button {
+  display: block; width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--ink-strong); font: inherit; font-size: 0.92rem; cursor: pointer;
+}
+.suggest button.active, .suggest button:hover { background: var(--accent-soft); }
+
 /* 연결 점검 */
 .diag { margin: 0; font-size: 0.82rem; line-height: 1.6; padding: 4px 6px; }
 .diag dt { font-weight: 800; color: var(--muted); margin-top: 8px; }
@@ -187,7 +206,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 }
 #toast.ok { background: var(--ok); }
 #toast.error { background: var(--danger); }
-#toast.info { background: var(--ink); }
+#toast.info { background: #fff; color: var(--ink-strong); border: 1px solid var(--line); }
 
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -244,7 +263,10 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
     <div class="toolbar">
       <div class="search">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="search-name" class="field" placeholder="심방 대상자 이름으로 검색" list="name-list" autocomplete="off">
+        <div class="ac-wrap" style="flex:1">
+          <input type="text" id="search-name" class="field" placeholder="심방 대상자 이름으로 검색" autocomplete="off" role="combobox" aria-expanded="false">
+          <div class="suggest" role="listbox" hidden></div>
+        </div>
         <button type="button" id="search-btn" class="btn btn-ghost" onclick="searchByName()">검색</button>
       </div>
       <div class="actions">
@@ -253,11 +275,9 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
         <button type="button" id="save-btn" class="btn btn-primary" onclick="save()">기록 저장</button>
       </div>
     </div>
-    <datalist id="name-list"></datalist>
 
     <div id="found" class="found" hidden aria-live="polite"></div>
 
-    <div id="mode-bar" class="mode new"></div>
 
     <form id="visit-form" novalidate autocomplete="off">
       <div class="c3">
@@ -276,7 +296,10 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
       <div class="c2">
         <label class="lbl" for="targetName">심방 대상자<span class="req">*</span></label>
-        <input type="text" id="targetName" class="field" required list="name-list" placeholder="예: 000 집사">
+        <div class="ac-wrap">
+          <input type="text" id="targetName" class="field" required placeholder="예: 000 집사" autocomplete="off" role="combobox" aria-expanded="false">
+          <div class="suggest" role="listbox" hidden></div>
+        </div>
       </div>
 
       <div class="c2">
@@ -329,7 +352,10 @@ const state = {
   saving: false,
   modalRecords: [],     // 모달 목록의 기록 (클릭 시 index로 찾음)
   range: { year: '', records: [], view: '' },
-  years: []
+  years: [],
+  names: [],
+  detail: null,
+  listBack: null
 };
 
 const $ = id => document.getElementById(id);
@@ -405,7 +431,7 @@ async function visitApi(params, timeoutMs = 25000) {
 async function loadNames() {
   try {
     const d = await visitApi({ action: 'names' });
-    $('name-list').innerHTML = (d.names || []).map(n => `<option value="${esc(n)}">`).join('');
+    state.names = d.names || [];
     state.years = d.years || [];
     fillYears();
   } catch (e) {
@@ -422,8 +448,47 @@ function fillYears() {
   sel.value = years.includes(current) ? current : thisYear;
 }
 
+// ───────── 이름 자동완성 ─────────
+function attachSuggest(input, onPick) {
+  const box = input.parentElement.querySelector('.suggest');
+  let items = [];
+  let active = -1;
+
+  const hide = () => { box.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; };
+  const highlight = i => {
+    active = i;
+    [...box.children].forEach((el, k) => el.classList.toggle('active', k === i));
+    if (box.children[i]) box.children[i].scrollIntoView({ block: 'nearest' });
+  };
+  const pick = name => { input.value = name; hide(); onPick(name); };
+
+  input.addEventListener('input', () => {
+    const q = (personNames(input.value)[0] || input.value.trim()).replace(/\s+/g, '');
+    if (!q) return hide();
+    items = state.names.filter(n => n.includes(q)).slice(0, 8);
+    if (!items.length || (items.length === 1 && items[0] === q)) return hide();
+    box.innerHTML = items.map(n => `<button type="button" role="option">${esc(n)}</button>`).join('');
+    box.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+    active = -1;
+  });
+  input.addEventListener('keydown', e => {
+    if (e.isComposing || e.keyCode === 229 || box.hidden) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); highlight((active + 1) % items.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); highlight((active - 1 + items.length) % items.length); }
+    else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); e.stopImmediatePropagation(); pick(items[active]); }
+    else if (e.key === 'Escape') { hide(); }
+  });
+  // mousedown에서 처리해야 입력칸 blur보다 먼저 선택됨
+  box.addEventListener('mousedown', e => {
+    const b = e.target.closest('button');
+    if (b) { e.preventDefault(); pick(items[[...box.children].indexOf(b)]); }
+  });
+  input.addEventListener('blur', () => setTimeout(hide, 120));
+}
+
 // ───────── 이름 검색 ─────────
-async function searchByName(nameArg) {
+async function searchByName(nameArg, openList = false) {
   const raw = (nameArg ?? $('search-name').value).trim();
   const name = personNames(raw)[0] || raw;
   if (!name) { toast('검색할 이름을 입력하세요.', 'error'); $('search-name').focus(); return; }
@@ -443,7 +508,7 @@ async function searchByName(nameArg) {
     btn.disabled = false;
     renderFound();
   }
-  if (!nameArg && state.found?.records.length) openFoundList();
+  if ((!nameArg || openList) && state.found?.records.length) openFoundList();
 }
 
 function renderFound() {
@@ -477,7 +542,8 @@ function openFoundList() {
   $('modal-title').textContent = `${f.name} 님 심방 기록`;
   $('modal-sub').textContent = `총 ${f.records.length}회, 최신 날짜순`;
   $('range-bar').hidden = true;
-  renderRecordList(f.records, false);
+  state.listBack = () => renderRecordList(f.records, false);
+  state.listBack();
   openModal();
 }
 
@@ -495,18 +561,9 @@ function newForFound() {
 }
 
 // ───────── 작성 / 수정 상태 ─────────
+// 상태줄 없이 저장 버튼 글자로만 구분
 function renderModeBar() {
-  const bar = $('mode-bar');
-  if (state.editing) {
-    bar.className = 'mode edit';
-    bar.innerHTML = `<div><strong>${esc(fmtVisit(state.editing))} ${esc(state.editing.targetName)}</strong> 심방 기록을 수정하고 있습니다.</div>
-      <button type="button" class="btn btn-ghost btn-small" onclick="switchToNew()">새 기록 작성으로 전환</button>`;
-    $('save-btn').textContent = '변경 사항 저장';
-  } else {
-    bar.className = 'mode new';
-    bar.innerHTML = '<div><strong>새 심방 기록</strong>을 작성하고 있습니다.</div>';
-    $('save-btn').textContent = '기록 저장';
-  }
+  $('save-btn').textContent = state.editing ? '변경 사항 저장' : '기록 저장';
 }
 
 function startNew() {
@@ -517,11 +574,6 @@ function startNew() {
   renderModeBar();
 }
 
-function switchToNew() {
-  if (!confirmDiscard()) return;
-  startNew();
-}
-
 function resetAll() {
   if (!confirmDiscard()) return;
   state.found = null;
@@ -529,6 +581,36 @@ function resetAll() {
   renderFound();
   startNew();
   $('search-name').focus();
+}
+
+// 목록에서 기록을 누르면 상세 내용만 보여 줌
+function showDetail(rec) {
+  state.detail = rec;
+  const wd = weekday(rec.visitDate);
+  const when = `${rec.visitDate}${wd ? ` (${wd})` : ''}${rec.startTime ? `  ${rec.startTime}${rec.endTime ? ` ~ ${rec.endTime}` : ''}` : ''}`;
+  const row = (label, v) => `<div><dt>${label}</dt><dd>${esc(v || '-')}</dd></div>`;
+  $('modal-list').innerHTML = `<div class="detail">
+    <div class="detail-nav">
+      <button type="button" class="btn btn-ghost btn-small" data-act="back">← 목록으로</button>
+      <button type="button" class="btn btn-ghost btn-small" data-act="edit">이 기록 수정</button>
+    </div>
+    <div class="detail-when">${esc(when)}</div>
+    <dl class="detail-grid">
+      ${row('심방 대상자', rec.targetName)}
+      ${row('심방 요청자', rec.requestor)}
+      ${row('심방 참가자', rec.visitorList)}
+      ${row('사유 / 목적', rec.reason)}
+      ${row('심방 장소', rec.location)}
+    </dl>
+    <section><h4>상세내용</h4><p>${esc(rec.details || '-')}</p></section>
+    <section><h4>향후관리 / 계획</h4><p>${esc(rec.followUp || '-')}</p></section>
+  </div>`;
+  $('modal-list').scrollTop = 0;
+}
+
+function backToList() {
+  state.detail = null;
+  if (typeof state.listBack === 'function') state.listBack();
 }
 
 function loadRecord(rec) {
@@ -597,6 +679,7 @@ async function runRange(view) {
     const d = await visitApi({ action: 'list', year });
     state.range.year = year;
     state.range.records = sortRecords(d.records || []);
+    state.listBack = renderRange;
     renderRange();
   } catch (e) {
     $('modal-list').innerHTML = `<div class="modal-empty">기록을 불러오지 못했습니다: ${esc(e.message)}</div>`;
@@ -768,6 +851,8 @@ window.addEventListener('DOMContentLoaded', () => {
   fillYears();
   loadNames();
 
+  attachSuggest($('search-name'), name => searchByName(name, true));
+  attachSuggest($('targetName'), () => { state.dirty = true; });
   $('search-name').addEventListener('focus', e => e.target.select());
   $('search-name').addEventListener('keydown', e => {
     if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중에는 무시
@@ -775,8 +860,11 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   $('modal-list').addEventListener('click', e => {
+    const act = e.target.closest('[data-act]');
+    if (act && act.dataset.act === 'back') return backToList();
+    if (act && act.dataset.act === 'edit') return loadRecord(state.detail);
     const item = e.target.closest('.rec');
-    if (item) loadRecord(state.modalRecords[+item.dataset.i]);
+    if (item) showDetail(state.modalRecords[+item.dataset.i]);
   });
   $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').hidden) closeModal(); });

@@ -115,10 +115,12 @@ select.field { padding-right: 32px; }
 .found-actions { display: flex; gap: 6px; }
 
 /* 폼 */
-form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px 18px; }
-.c2 { grid-column: span 2; }
-.c3 { grid-column: span 3; }
-.c4 { grid-column: span 4; }
+form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 16px 18px; }
+.s4 { grid-column: span 4; }
+.c2 { grid-column: span 6; }
+.c3 { grid-column: span 9; }
+.c4 { grid-column: span 12; }
+.s10 { grid-column: span 10; }
 .full { grid-column: 1 / -1; }
 .lbl { display: block; font-size: 0.8rem; font-weight: 800; color: #334155; margin-bottom: 5px; }
 .lbl .req { color: var(--danger); margin-left: 2px; }
@@ -216,7 +218,7 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 @media (max-width: 680px) {
   form { grid-template-columns: 1fr; padding: 16px 14px; }
-  .c2, .c3, .c4 { grid-column: 1 / -1; }
+  .c2, .c3, .c4, .s4, .s10 { grid-column: 1 / -1; }
   .actions { width: 100%; }
   .search { flex: 1 1 100%; }
   .search .ac-wrap { flex: 1 1 auto; }
@@ -284,6 +286,24 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
 
 
     <form id="visit-form" novalidate autocomplete="off">
+      <div class="s4">
+        <label class="lbl" for="targetName">심방 대상자<span class="req">*</span></label>
+        <div class="ac-wrap">
+          <input type="text" id="targetName" class="field" required placeholder="예: 000 집사" autocomplete="off" role="combobox" aria-expanded="false">
+          <div class="suggest" role="listbox" hidden></div>
+        </div>
+      </div>
+
+      <div class="s4">
+        <label class="lbl" for="requestor">심방 요청자</label>
+        <input type="text" id="requestor" class="field" placeholder="요청한 분">
+      </div>
+
+      <div class="s10">
+        <label class="lbl" for="visitorList">심방 참가자<span class="req">*</span></label>
+        <input type="text" id="visitorList" class="field" required placeholder="함께 간 분들">
+      </div>
+
       <div class="c3">
         <label class="lbl" for="visitDate">심방날짜<span class="req">*</span></label>
         <input type="date" id="visitDate" class="field" required>
@@ -296,24 +316,6 @@ form { padding: 18px 16px 20px; display: grid; grid-template-columns: repeat(6, 
           <span>~</span>
           <input type="time" id="endTime" class="field" required aria-label="종료시간">
         </div>
-      </div>
-
-      <div class="c2">
-        <label class="lbl" for="targetName">심방 대상자<span class="req">*</span></label>
-        <div class="ac-wrap">
-          <input type="text" id="targetName" class="field" required placeholder="예: 000 집사" autocomplete="off" role="combobox" aria-expanded="false">
-          <div class="suggest" role="listbox" hidden></div>
-        </div>
-      </div>
-
-      <div class="c2">
-        <label class="lbl" for="requestor">심방 요청자</label>
-        <input type="text" id="requestor" class="field" placeholder="요청한 분">
-      </div>
-
-      <div class="c2">
-        <label class="lbl" for="visitorList">심방 참가자<span class="req">*</span></label>
-        <input type="text" id="visitorList" class="field" required placeholder="함께 간 분들">
       </div>
 
       <div class="c2">
